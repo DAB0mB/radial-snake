@@ -1,0 +1,9 @@
+{
+  "name": "radial-snake",
+  "description": "A tutorial for creating a Tron-style game",
+  "repository": {
+    "type": "git",
+    "url": "https://DAB0mB@github.com/DAB0mB/radial-snake.git"
+  },
+  "private": true
+}
