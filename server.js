@@ -2,6 +2,7 @@ const Async = require("async");
 const Hapi = require("hapi");
 const Inert = require("inert");
 const Endpoints = require("./routes/endpoints");
+const Pages = require("./routes/pages");
 const IpGrabber = require("./helpers/ip_grabber");
 
 let localIp = IpGrabber.local();
@@ -40,6 +41,7 @@ server.ext("onPreResponse", (req, rep) => {
 Async.series([
   next => server.register(Inert, next),
   next => server.register(Endpoints, next),
+  next => server.register(Pages, next),
   // Once registrations are finished, start the server
   next => server.start(next)
 // Print message once started
