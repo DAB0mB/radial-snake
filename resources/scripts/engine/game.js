@@ -15,7 +15,7 @@ Engine.Game = class Game {
     this.debugging = debugging;
     this.lastUpdate = this.creation = new Date().getTime();
 
-    // Canvas dimensions must be set programmatically otherwise you might encounter some
+    // Canvas dimensions must be set programmatically, otherwise you might encounter some
     // unexpected behaviors
     canvas.width = 1280;
     canvas.height = 720;
@@ -25,9 +25,13 @@ Engine.Game = class Game {
 
     // We want to focus on the canvas once we press on it
     canvas.addEventListener("mousedown", canvas.focus.bind(canvas), false);
+    // Key flags will be registered by the "KeyStates" instance
+    canvas.addEventListener("keydown", onKeyDown.bind(this), false);
+    canvas.addEventListener("keyup", onKeyUp.bind(this), false);
 
     this.assets = {};
     this.events = new Map();
+    this.keyStates = new Engine.KeyStates();
     this.context = canvas.getContext("2d");
     this.bufferedCanvas = document.createElement("canvas");
     this.bufferedContext = this.bufferedCanvas.getContext("2d");
@@ -110,3 +114,18 @@ Engine.Game = class Game {
     this.canvas.removeEventListener(type, boundListener, false);
   }
 };
+
+function onKeyDown(e) {
+  // Once we're focused on the canvas, we want nothing else to happen
+  // besides events the game is listening to. For example, when we press
+  // the arrow keys, this will prevent the screen from scrolling
+  e.preventDefault();
+  // Register key press
+  this.keyStates.add(e.keyCode);
+}
+
+function onKeyUp(e) {
+  e.preventDefault();
+  // Register key release
+  this.keyStates.remove(e.keyCode);
+}
