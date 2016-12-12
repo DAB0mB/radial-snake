@@ -7,7 +7,7 @@
   },
   "private": true,
   "scripts": {
-    "serve": "node server.js"
+    "serve": "nodemon server.js"
   },
   "dependencies": {
     "hapi": "^16.0.1"
