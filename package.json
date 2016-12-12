@@ -6,6 +6,8 @@
     "serve": "nodemon server.js"
   },
   "dependencies": {
-    "hapi": "^16.0.1"
+    "async": "^2.1.4",
+    "hapi": "^16.0.1",
+    "inert": "^4.0.3"
   }
 }
