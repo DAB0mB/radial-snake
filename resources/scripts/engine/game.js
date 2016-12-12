@@ -30,6 +30,7 @@ Engine.Game = class Game {
 
     this.assets = {};
     this.events = new Map();
+    this.screen = new Engine.Screen(this);
     this.keyStates = new Engine.KeyStates();
     this.context = canvas.getContext("2d");
     this.bufferedCanvas = document.createElement("canvas");
@@ -46,6 +47,13 @@ Engine.Game = class Game {
     this.context.beginPath();
     this.context.rect(0, 0, this.canvas.width, this.canvas.height);
     this.context.fill();
+    this.drawScreen(this.context);
+  }
+
+  drawScreen(context) {
+    // If screen's assets are not yet loaded, don't draw it
+    if (this.screen.loading) return;
+    if (this.screen.draw) this.screen.draw(context);
   }
 
   update() {
@@ -54,6 +62,13 @@ Engine.Game = class Game {
     let currUpdate = this.lastUpdate = new Date().getTime();
     let span = currUpdate - lastUpdate;
     this.updateScreen(span / this.speed);
+  }
+
+  updateScreen(span) {
+    this.screen.age += span;
+    // If screen's assets are not yet loaded, don't update it
+    if (this.screen.loading) return;
+    if (this.screen.update) this.screen.update(span);
   }
 
   // The main loop of the game
