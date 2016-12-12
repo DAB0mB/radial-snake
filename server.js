@@ -1,5 +1,7 @@
 const Hapi = require("hapi");
+const IpGrabber = require("./helpers/ip_grabber");
 
+let localIp = IpGrabber.local();
 let port = 8000;
 
 // Initialize a new server
@@ -29,7 +31,7 @@ server.start((err) => {
   console.log();
   console.log("---------- -------- ------ ---- --");
   console.log("----- ---- --- -- -");
-  console.log(`Server running at ${port}`);
+  console.log(`Server running at ${localIp}:${port}`);
   console.log("----- ---- --- -- -");
   console.log("---------- -------- ------ ---- --");
   console.log();
