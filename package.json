@@ -6,6 +6,9 @@
     "url": "https://DAB0mB@github.com/DAB0mB/radial-snake.git"
   },
   "private": true,
+  "scripts": {
+    "serve": "node server.js"
+  },
   "dependencies": {
     "hapi": "^16.0.1"
   }
