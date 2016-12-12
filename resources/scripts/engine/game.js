@@ -106,6 +106,58 @@ Engine.Game = class Game {
     this.playing = false;
   }
 
+  changeScreen(Screen, ...screenArgs) {
+    // If there is a screen defined, dispose it first
+    if (this.screen) {
+      this.unloadScreen();
+      this.screen.disposeEventListeners();
+    }
+
+    this.screen = new Screen(this, ...screenArgs);
+
+    // Load screen assets
+    this.loadScreen(() => {
+      // Once assets are loaded, initialize event listeners
+      this.screen.initEventListeners();
+      // The "initialize" method is exactly the same as the constructor, only it runs
+      // once assets are available and event listeners are registered
+      this.screen.initialize(this, ...screenArgs);
+    });
+  }
+
+  // Loads screen assets and invokes callback once loading is finished
+  loadScreen(callback = _.noop) {
+    if (!this.screen.load) return callback();
+
+    this.screen.loading = true;
+    // The number of assets to load
+    let loadsize = 0;
+
+    // We use the "after" method because we want the following callback to be invoked
+    // only once all assets are loaded
+    let onload = _.after(loadsize, () => {
+      delete this.screen.loading;
+      callback();
+    });
+
+    // This object can load assets
+    let assetsLoader = new Engine.AssetsLoader(() => {
+      loadsize++;
+      return () => onload();
+    });
+
+    // The "load" method returns the assets loaded by the screen
+    let screenAssets = this.screen.load(assetsLoader);
+    // The returned assets will be available on screen's assets object
+    _.extend(this.screen.assets, screenAssets);
+  }
+
+  // Disposes screen assets
+  unloadScreen() {
+    let assetsNames = this.screen.unload && this.screen.unload();
+    _.omit(this.assets, assetsNames);
+  }
+
   // Defines global assets
   extendAssets(assets) {
     _.extend(this.assets, assets);
