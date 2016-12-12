@@ -1,5 +1,8 @@
 {
   "name": "radial-snake",
   "description": "A tutorial for creating a Tron-style game",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "hapi": "^16.0.1"
+  }
 }
