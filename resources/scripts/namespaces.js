@@ -2,4 +2,6 @@ Game = {
   Screens: {}
 };
 
-Engine = {};
+Engine = {
+  Animations: {}
+};
