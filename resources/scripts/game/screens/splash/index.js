@@ -1,9 +1,34 @@
 Game.Screens.Splash = class Splash extends Engine.Screen {
   initialize() {
     // Create splash sprite and set its properties
-    this.splashSprite = new Engine.Sprite(this.assets.splashTexture);
-    this.splashSprite.align = "center";
-    this.splashSprite.x = this.width / 2;
+    let splashSprite = new Engine.Sprite(this.assets.splashTexture);
+    splashSprite.align = "center";
+    splashSprite.x = this.width / 2;
+
+    // Create splash sprite animation
+    this.splashAnim = new Engine.Animations.Keyframe(splashSprite, [
+      {
+        y: (this.height / 2) - 30,
+        width: splashSprite.width / 4,
+        height: splashSprite.height / 4,
+        opacity: 0,
+        easing: "in",
+        frame: 0
+      },
+      {
+        y: this.height / 2,
+        width: (splashSprite.width / 3) + (splashSprite.width * 0.05),
+        height: (splashSprite.height / 3) + (splashSprite.height * 0.05),
+        opacity: 1,
+        frame: 3000
+      },
+      {
+        frame: 3500
+      }
+    ]);
+
+    // Start playing animation
+    this.splashAnim.play();
   }
 
   load(assetsLoader) {
@@ -14,6 +39,10 @@ Game.Screens.Splash = class Splash extends Engine.Screen {
   }
 
   draw(context) {
-    this.splashSprite.draw(context);
+    this.splashAnim.draw(context);
+  }
+
+  update(span) {
+    this.splashAnim.update(span);
   }
 };
