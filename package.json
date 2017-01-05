@@ -7,7 +7,8 @@
   },
   "private": true,
   "scripts": {
-    "serve": "nodemon server.js"
+    "serve": "npm run parse:fonts && nodemon server.js",
+    "build:fonts": "node helpers/font_parser.js"
   },
   "dependencies": {
     "async": "^2.1.4",
