@@ -32,10 +32,21 @@ Game.Screens.Splash = class Splash extends Engine.Screen {
   }
 
   load(assetsLoader) {
+    // Load assets
+    let instructionsTexture = assetsLoader.texture("/textures/instrucitons");
+    let logoTexture = assetsLoader.texture("/textures/logo");
+    let splashTexture = assetsLoader.texture("/textures/splash");
+
+    // These are global assets which will be shared among all screens until manually
+    // disposed. We use the time gap created by the splash animation to load necessary
+    // assets without wasting any time
+    this.game.extendAssets({
+      instructionsTexture,
+      logoTexture
+    });
+
     // These are local assets which will be disposed along with the screen
-    return {
-      splashTexture: assetsLoader.texture("/textures/splash")
-    };
+    return { splashTexture };
   }
 
   draw(context) {
@@ -43,6 +54,12 @@ Game.Screens.Splash = class Splash extends Engine.Screen {
   }
 
   update(span) {
-    this.splashAnim.update(span);
+    if (this.splashAnim.playing) {
+      this.splashAnim.update(span);
+    }
+    // Once animation has stopped play switch to main menu
+    else {
+      this.game.changeScreen(Game.Screens.Menu);
+    }
   }
 };
