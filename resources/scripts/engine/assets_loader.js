@@ -10,4 +10,12 @@ Engine.AssetsLoader = class AssetsLoader {
     image.src = `${path}.png`;
     return image;
   }
+
+  // Load font
+  font(path) {
+    let font = new Engine.Font();
+    font.onload = this.next();
+    font.src = path;
+    return font;
+  }
 };
