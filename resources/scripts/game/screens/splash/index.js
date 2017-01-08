@@ -33,7 +33,7 @@ Game.Screens.Splash = class Splash extends Engine.Screen {
 
   load(assetsLoader) {
     // Load assets
-    let instructionsTexture = assetsLoader.texture("/textures/instrucitons");
+    let minecraftiaFont = assetsLoader.font("/fonts/minecraftia");
     let logoTexture = assetsLoader.texture("/textures/logo");
     let splashTexture = assetsLoader.texture("/textures/splash");
 
@@ -41,7 +41,7 @@ Game.Screens.Splash = class Splash extends Engine.Screen {
     // disposed. We use the time gap created by the splash animation to load necessary
     // assets without wasting any time
     this.game.extendAssets({
-      instructionsTexture,
+      minecraftiaFont,
       logoTexture
     });
 
