@@ -46,6 +46,8 @@ Engine.Geometry.Line = class Line {
       return this.getLineIntersection(shape);
     if (shape instanceof Engine.Geometry.Circle)
       return this.getCircleIntersection(shape);
+    if (shape instanceof Engine.Geometry.Polygon)
+      return this.getPolygonIntersection(shape);
   }
 
   // line - line intersection method
@@ -68,5 +70,10 @@ Engine.Geometry.Line = class Line {
   // line - circle intersection method
   getCircleIntersection(circle) {
     return circle.getLineIntersection(this);
+  }
+
+  // line - polygon intersection method
+  getPolygonIntersection(polygon) {
+    return polygon.getLineIntersection(this);
   }
 };
