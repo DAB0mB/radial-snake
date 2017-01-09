@@ -3,5 +3,6 @@ Game = {
 };
 
 Engine = {
-  Animations: {}
+  Animations: {},
+  Geometry: {}
 };
