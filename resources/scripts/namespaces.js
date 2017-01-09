@@ -1,4 +1,5 @@
 Game = {
+  Entities: {},
   Screens: {}
 };
 
