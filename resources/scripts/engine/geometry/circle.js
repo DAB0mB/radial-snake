@@ -83,6 +83,8 @@ Engine.Geometry.Circle = class Circle {
       return this.getLineIntersection(shape);
     if (shape instanceof Engine.Geometry.Circle)
       return this.getCircleIntersection(shape);
+    if (shape instanceof Engine.Geometry.Polygon)
+      return this.getPolygonIntersection(shape);
   }
 
   // circle - circle intersection method
@@ -163,5 +165,10 @@ Engine.Geometry.Circle = class Circle {
     interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
 
     if (interPoints.length > 0) return interPoints;
+  }
+
+  // circle - polygon intersection method
+  getPolygonIntersection(polygon) {
+    return polygon.getCircleIntersection(this);
   }
 };
