@@ -44,6 +44,8 @@ Engine.Geometry.Line = class Line {
   getIntersection(shape) {
     if (shape instanceof Engine.Geometry.Line)
       return this.getLineIntersection(shape);
+    if (shape instanceof Engine.Geometry.Circle)
+      return this.getCircleIntersection(shape);
   }
 
   // line - line intersection method
@@ -61,5 +63,10 @@ Engine.Geometry.Line = class Line {
         Utils.isBetween(y, this.y1, this.y2) && Utils.isBetween(y, line.y1, line.y2)) {
       return { x, y };
     }
+  }
+
+  // line - circle intersection method
+  getCircleIntersection(circle) {
+    return circle.getLineIntersection(this);
   }
 };
