@@ -1,4 +1,10 @@
 Game.Screens.Menu = class Menu extends Engine.Screen {
+  get events() {
+    return {
+      "keydown": "onKeyDown"
+    }
+  }
+
   initialize() {
     // Initialize snake logo sprite
     this.logoSprite = new Engine.Sprite(this.assets.logoTexture);
@@ -40,10 +46,18 @@ Game.Screens.Menu = class Menu extends Engine.Screen {
   }
 
   update(span) {
-    this.instructionsAnim.update(span);
+    // On key press, proceed to play screen
+    if (this.keyPressed) {
+      this.game.changeScreen(Game.Screens.Play);
+    }
+    // Else, just update animation
+    else {
+      this.instructionsAnim.update(span);
+    }
   }
 
-  update(span) {
-    this.instructionsAnim.update(span);
+  // Register key press
+  onKeyDown(e) {
+    this.keyPressed = true;
   }
 };
