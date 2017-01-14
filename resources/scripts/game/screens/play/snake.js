@@ -38,6 +38,9 @@ Game.Screens.Play.Snake = class Snake extends Engine.Layer {
         }
       })
     ];
+
+    // Show score board for newly created snakes
+    screen.appendLayer(Game.Screens.Play.Score, this.snakes);
   }
 
   draw(context) {
