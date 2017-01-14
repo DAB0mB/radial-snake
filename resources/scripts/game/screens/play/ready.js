@@ -55,5 +55,8 @@ Game.Screens.Play.Ready = class Ready extends Engine.Layer {
     // This will start playing the animation
     this.ready = true;
     this.readyAnim.play();
+
+    // Start the game in the background
+    this.screen.prependLayer(Game.Screens.Play.Snake, this.snakes);
   }
 };
