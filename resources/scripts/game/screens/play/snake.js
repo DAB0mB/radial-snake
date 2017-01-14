@@ -76,7 +76,13 @@ Game.Screens.Play.Snake = class Snake extends Engine.Layer {
     // If this is not a tie, which is a very rare case, increase the winner's score
     if (winner) winner.score++;
 
-    // Indicates whether we should update the score counter or not
+    // Show a message saying the result (e.g., "red snake wins")
+    this.screen.appendLayer(Game.Screens.Play.Win, snakes, winner);
+
+    // Indicates whether we should update the score counter or not.
+    // In addition, will prevent from the 'winner' message from appearing multiple times,
+    // otherwise memory is gonna be wasted despite the fact that we're not going to see
+    // any visual difference
     this.matchFinished = true;
   }
 };
