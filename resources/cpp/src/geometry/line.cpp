@@ -1,3 +1,6 @@
+#include <vector>
+#include <emscripten/bind.h>
+#include <emscripten/val.h>
 #include "../nullable.h"
 #include "../utils.h"
 #include "point.h"
@@ -96,4 +99,52 @@ namespace geometry {
 
     return Nullable<Point>();
   }
+
+  emscripten::val EMLine::getMatchingX(double y) {
+    Nullable<double> nullableX = Line::getMatchingX(y);
+    return nullableX.hasValue() ?
+      emscripten::val(nullableX.getValue()) :
+      emscripten::val::undefined();
+  }
+
+  emscripten::val EMLine::getMatchingY(double x) {
+    Nullable<double> nullableY = Line::getMatchingY(x);
+    return nullableY.hasValue() ?
+      emscripten::val(nullableY.getValue()) :
+      emscripten::val::undefined();
+  }
+
+  emscripten::val EMLine::getIntersection(EMLine emLine) {
+    Line line = Line(emLine._x1, emLine._y1, emLine._x2, emLine._y2);
+    Nullable<Point> nullablePoint = Line::getIntersection(line);
+
+    if (nullablePoint.isNull()) return emscripten::val::undefined();
+
+    Point point = nullablePoint.getValue();
+    emscripten::val emPoint = emscripten::val::object();
+    emPoint.set("x", emscripten::val(point.x));
+    emPoint.set("y", emscripten::val(point.y));
+    return emPoint;
+  }
+}
+
+EMSCRIPTEN_BINDINGS(geometry_line_module) {
+  emscripten::class_<geometry::Line>("geometry_line_base")
+    .constructor<double, double, double, double>()
+    .property<double>("x1", &geometry::Line::_x1)
+    .property<double>("y1", &geometry::Line::_y1)
+    .property<double>("x2", &geometry::Line::_x2)
+    .property<double>("y2", &geometry::Line::_y2)
+    .function("hasPoint", &geometry::Line::hasPoint)
+    .function("boundsHavePoint", &geometry::Line::boundsHavePoint);
+
+  emscripten::class_<geometry::EMLine, emscripten::base<geometry::Line>>("geometry_line")
+    .constructor<double, double, double, double>()
+    .function("getX", &geometry::EMLine::getMatchingX)
+    .function("getY", &geometry::EMLine::getMatchingY)
+    .function("getLineIntersection",
+      emscripten::select_overload<emscripten::val(geometry::EMLine)>(
+        &geometry::EMLine::getIntersection
+      )
+    );
 }
