@@ -5,6 +5,10 @@ Engine.Geometry.Polygon = class Polygon {
     this.bounds = bounds.map(coords => new Engine.Geometry.Line(...coords));
   }
 
+  delete() {
+    this.bounds.forEach(bound => bound.delete());
+  }
+
   // Returns if polygon has given point
   hasPoint(x, y) {
     // Run check for each bound
