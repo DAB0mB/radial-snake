@@ -3,8 +3,10 @@
   "description": "A tutorial for creating a Tron-style game",
   "private": true,
   "scripts": {
-    "serve": "npm run parse:fonts && nodemon server.js",
-    "build:fonts": "node helpers/font_parser.js"
+    "serve": "npm run build && nodemon server.js",
+    "build": "npm run build:fonts && npm run build:cpp",
+    "build:fonts": "node helpers/font_parser.js",
+    "build:cpp": "emcc -O1 --pre-js resources/cpp/pre.js --post-js resources/cpp/post.js --bind -o resources/scripts/cpp.bundle.js resources/cpp/src/index.cpp"
   },
   "dependencies": {
     "async": "^2.1.4",
