@@ -64,6 +64,8 @@ describe("Engine.Geometry.Polygon class", function() {
           { x: 2, y: 0 },
           { x: 0, y: 2 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -74,6 +76,8 @@ describe("Engine.Geometry.Polygon class", function() {
         expect(this.polygon.getCircleIntersection(circle)).toEqual([
           { x: 2, y: 0 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -84,6 +88,8 @@ describe("Engine.Geometry.Polygon class", function() {
         expect(this.polygon.getCircleIntersection(circle)).toEqual([
           { x: 0, y: 3 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -91,6 +97,7 @@ describe("Engine.Geometry.Polygon class", function() {
       it("returns nothing", function() {
         let circle = new Engine.Geometry.Circle(10, 10, 2, 0, 2 * Math.PI);
         expect(this.polygon.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
 
@@ -98,6 +105,7 @@ describe("Engine.Geometry.Polygon class", function() {
       it("nothing", function() {
         let circle = new Engine.Geometry.Circle(2.5, 2.5, 2, 0, 2 * Math.PI);
         expect(this.polygon.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
   });
