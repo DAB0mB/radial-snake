@@ -4,6 +4,7 @@
 #include <emscripten/val.h>
 #include "../nullable.h"
 #include "point.h"
+#include "circle.h"
 
 namespace geometry {
   class Circle;
@@ -27,6 +28,8 @@ namespace geometry {
     bool boundsHavePoint(double x, double y);
 
     Nullable<Point> getIntersection(Line line);
+
+    Nullable<std::vector<Point>> getIntersection(Circle circle);
   };
 
   class EMLine : public Line {
@@ -38,5 +41,7 @@ namespace geometry {
     emscripten::val getMatchingY(double x);
 
     emscripten::val getIntersection(EMLine line);
+
+    emscripten::val getIntersection(EMCircle circle);
   };
 }

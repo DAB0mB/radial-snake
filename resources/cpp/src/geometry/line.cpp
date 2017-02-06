@@ -4,6 +4,7 @@
 #include "../nullable.h"
 #include "../utils.h"
 #include "point.h"
+#include "circle.h"
 #include "line.h"
 
 namespace geometry {
@@ -100,6 +101,11 @@ namespace geometry {
     return Nullable<Point>();
   }
 
+  // circle - circle intersection method
+  Nullable<std::vector<Point>> Line::getIntersection(Circle circle) {
+    return circle.getIntersection(*this);
+  }
+
   emscripten::val EMLine::getMatchingX(double y) {
     Nullable<double> nullableX = Line::getMatchingX(y);
     return nullableX.hasValue() ?
@@ -126,6 +132,10 @@ namespace geometry {
     emPoint.set("y", emscripten::val(point.y));
     return emPoint;
   }
+
+  emscripten::val EMLine::getIntersection(EMCircle emCircle) {
+    return emCircle.getIntersection(*this);
+  }
 }
 
 EMSCRIPTEN_BINDINGS(geometry_line_module) {
@@ -144,6 +154,11 @@ EMSCRIPTEN_BINDINGS(geometry_line_module) {
     .function("getY", &geometry::EMLine::getMatchingY)
     .function("getLineIntersection",
       emscripten::select_overload<emscripten::val(geometry::EMLine)>(
+        &geometry::EMLine::getIntersection
+      )
+    )
+    .function("getCircleIntersection",
+      emscripten::select_overload<emscripten::val(geometry::EMCircle)>(
         &geometry::EMLine::getIntersection
       )
     );
