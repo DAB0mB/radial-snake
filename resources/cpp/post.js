@@ -7,7 +7,8 @@ return {
   },
 
   Geometry: {
-    Line: Module.geometry_line
+    Line: Module.geometry_line,
+    Circle: Module.geometry_circle
   }
 };
 
