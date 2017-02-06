@@ -20,5 +20,18 @@ Object.assign(Utils, CPP.Utils, {
   // Overload handling
   compare(context, num, method, precision = method) {
     return CPP.Utils.compare(context, num, method, precision);
+  },
+
+  proxy(Class) {
+    return class extends Class {
+      constructor() {
+        // Initialize original class
+        let that = new Class(...arguments);
+        // Inject caller's prototype into the prototype chain
+        Object.setPrototypeOf(that, new.target.prototype);
+        // Will original instance will be the substitute for 'this'
+        return that;
+      }
+    }
   }
 });
