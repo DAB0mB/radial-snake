@@ -111,6 +111,8 @@ describe("Engine.Geometry.Circle class", function() {
           { x: 6, y: 1 },
           { x: -4, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -121,6 +123,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getLineIntersection(line)).toEqual([
           { x: -4, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -131,6 +135,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getLineIntersection(line)).toEqual([
           { x: 1, y: 6 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -138,6 +144,7 @@ describe("Engine.Geometry.Circle class", function() {
       it("returns nothing", function() {
         let line = new Engine.Geometry.Line(-10, 10, 10, 10);
         expect(this.circle.getLineIntersection(line)).toBeUndefined();
+        line.delete();
       });
     });
   });
