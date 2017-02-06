@@ -23,6 +23,9 @@ Engine.Layer = class Layer {
     this.canvas = screen.game.canvas;
   }
 
+  delete() {
+  }
+
   update(span) {
   }
 
