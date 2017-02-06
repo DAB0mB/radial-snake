@@ -5,6 +5,61 @@
 #include "utils.h"
 
 namespace utils {
+  template<typename T>
+  Chain<T>::Chain(T accumulator): _accumulator(accumulator) {
+  }
+
+  template<>
+  Chain<double>* Chain<double>::mod(double num) {
+    double result = utils::mod(_accumulator, num);
+    Chain<double>* chain = new Chain<double>(result);
+    delete this;
+    return chain;
+  }
+
+  template<>
+  Chain<double>* Chain<double>::trim(int decimals, const std::string mode) {
+    double result = utils::trim(_accumulator, decimals, mode);
+    Chain<double>* chain = new Chain<double>(result);
+    delete this;
+    return chain;
+  }
+
+  template<>
+  Chain<bool>* Chain<double>::isBetween(double num1, double num2, const std::string precision) {
+    bool result = utils::isBetween(_accumulator, num1, num2, precision);
+    Chain<bool>* chain = new Chain<bool>(result);
+    delete this;
+    return chain;
+  }
+
+  template<>
+  Chain<bool>* Chain<double>::compare(double num, const std::string precision) {
+    bool result = utils::compare(_accumulator, num, precision);
+    Chain<bool>* chain = new Chain<bool>(result);
+    delete this;
+    return chain;
+  }
+
+  template<>
+  Chain<bool>* Chain<double>::compare(double num, const std::string method, const std::string precision) {
+    bool result = utils::compare(_accumulator, num, method, precision);
+    Chain<bool>* chain = new Chain<bool>(result);
+    delete this;
+    return chain;
+  }
+
+  template<typename T>
+  T Chain<T>::result() {
+    delete this;
+    return _accumulator;
+  }
+
+  template<typename T>
+  Chain<T>* chain(T accumulator) {
+    return new Chain<T>(accumulator);
+  }
+
   // Fixed modulo method which can calculate modulo of negative numbers properly
   // e.g. (-803).mod(800) returns 797
   double mod(double context, double num) {
