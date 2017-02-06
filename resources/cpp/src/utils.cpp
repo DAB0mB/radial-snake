@@ -1,6 +1,7 @@
 #include <cfloat>
 #include <cmath>
 #include <string>
+#include <emscripten/bind.h>
 #include "utils.h"
 
 namespace utils {
@@ -70,4 +71,15 @@ namespace utils {
       return context == num;
     }
   }
+}
+
+EMSCRIPTEN_BINDINGS(utils_module) {
+  emscripten::function("utils_mod", &utils::mod);
+  emscripten::function("utils_trim", &utils::trim);
+  emscripten::function("utils_isBetween", &utils::isBetween);
+  emscripten::function("utils_compare",
+    emscripten::select_overload<bool(double, double, const std::string, const std::string)>(
+      &utils::compare
+    )
+  );
 }
