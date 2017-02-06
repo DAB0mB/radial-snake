@@ -1,7 +1,8 @@
-
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <emscripten/bind.h>
+#include <emscripten/val.h>
 #include "../nullable.h"
 #include "../utils.h"
 #include "point.h"
@@ -199,4 +200,107 @@ namespace geometry {
 
     return Nullable<std::vector<Point>>();
   }
+
+  emscripten::val EMCircle::getMatchingX(double y) {
+    Nullable<double> nullableX = Circle::getMatchingX(y);
+    return nullableX.hasValue() ?
+      emscripten::val(nullableX.getValue()) :
+      emscripten::val::undefined();
+  }
+
+  emscripten::val EMCircle::getMatchingY(double x) {
+    Nullable<double> nullableY = Circle::getMatchingY(x);
+    return nullableY.hasValue() ?
+      emscripten::val(nullableY.getValue()) :
+      emscripten::val::undefined();
+  }
+
+  emscripten::val EMCircle::getMatchingPoint(double rad) {
+    Nullable<Point> nullablePoint = Circle::getMatchingPoint(rad);
+
+    if (nullablePoint.isNull()) return emscripten::val::undefined();
+
+    Point point = nullablePoint.getValue();
+    emscripten::val emPoint = emscripten::val::object();
+    emPoint.set("x", emscripten::val(point.x));
+    emPoint.set("y", emscripten::val(point.y));
+    return emPoint;
+  }
+
+  emscripten::val EMCircle::getMatchingRad(double x, double y) {
+    Nullable<double> nullableRad = Circle::getMatchingRad(x, y);
+    return nullableRad.hasValue() ?
+      emscripten::val(nullableRad.getValue()) :
+      emscripten::val::undefined();
+  }
+
+  emscripten::val EMCircle::getIntersection(EMLine emLine) {
+    Line line = Line(emLine._x1, emLine._y1, emLine._x2, emLine._y2);
+    Nullable<std::vector<Point>> nullablePoints = Circle::getIntersection(line);
+
+    if (nullablePoints.isNull()) return emscripten::val::undefined();
+
+    std::vector<Point> points = nullablePoints.getValue();
+    emscripten::val emPoints = emscripten::val::array();
+
+    for (unsigned i = 0; i < points.size(); i++) {
+      Point point = points.at(i);
+      emscripten::val emPoint = emscripten::val::object();
+      emPoint.set("x", emscripten::val(point.x));
+      emPoint.set("y", emscripten::val(point.y));
+      emPoints.set(i, emPoint);
+    }
+
+    return emPoints;
+  }
+
+  emscripten::val EMCircle::getIntersection(EMCircle emCircle) {
+    Circle circle = Circle(
+      emCircle._x, emCircle._y, emCircle._r, emCircle._rad1, emCircle._rad2
+    );
+    Nullable<std::vector<Point>> nullablePoints = Circle::getIntersection(circle);
+
+    if (nullablePoints.isNull()) return emscripten::val::undefined();
+
+    std::vector<Point> points = nullablePoints.getValue();
+    emscripten::val emPoints = emscripten::val::array();
+
+    for (unsigned i = 0; i < points.size(); i++) {
+      Point point = points.at(i);
+      emscripten::val emPoint = emscripten::val::object();
+      emPoint.set("x", emscripten::val(point.x));
+      emPoint.set("y", emscripten::val(point.y));
+      emPoints.set(i, emPoint);
+    }
+
+    return emPoints;
+  }
+}
+
+EMSCRIPTEN_BINDINGS(geometry_circle_module) {
+  emscripten::class_<geometry::Circle>("geometry_circle_base")
+    .constructor<double, double, double, double, double>()
+    .property<double>("x", &geometry::Circle::_x)
+    .property<double>("y", &geometry::Circle::_y)
+    .property<double>("r", &geometry::Circle::_r)
+    .property<double>("rad1", &geometry::Circle::_rad1)
+    .property<double>("rad2", &geometry::Circle::_rad2)
+    .function("hasPoint", &geometry::Circle::hasPoint);
+
+  emscripten::class_<geometry::EMCircle, emscripten::base<geometry::Circle>>("geometry_circle")
+    .constructor<double, double, double, double, double>()
+    .function("getX", &geometry::EMCircle::getMatchingX)
+    .function("getY", &geometry::EMCircle::getMatchingY)
+    .function("getPoint", &geometry::EMCircle::getMatchingPoint)
+    .function("getRad", &geometry::EMCircle::getMatchingRad)
+    .function("getLineIntersection",
+      emscripten::select_overload<emscripten::val(geometry::EMLine)>(
+        &geometry::EMCircle::getIntersection
+      )
+    )
+    .function("getCircleIntersection",
+      emscripten::select_overload<emscripten::val(geometry::EMCircle)>(
+        &geometry::EMCircle::getIntersection
+      )
+    );
 }
