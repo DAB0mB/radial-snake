@@ -1,3 +1,4 @@
 node_modules
 npm-debug.log
 resources/assets/fonts/*.json
+resources/scripts/cpp.bundle.js
