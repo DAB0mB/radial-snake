@@ -14,11 +14,6 @@ Engine.Geometry.Line = class Line extends Utils.proxy(CPP.Geometry.Line) {
       return this.getPolygonIntersection(shape);
   }
 
-  // line - circle intersection method
-  getCircleIntersection(circle) {
-    return circle.getLineIntersection(this);
-  }
-
   // line - polygon intersection method
   getPolygonIntersection(polygon) {
     return polygon.getLineIntersection(this);
