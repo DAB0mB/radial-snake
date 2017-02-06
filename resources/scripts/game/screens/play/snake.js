@@ -43,6 +43,10 @@ Game.Screens.Play.Snake = class Snake extends Engine.Layer {
     screen.appendLayer(Game.Screens.Play.Score, this.snakes);
   }
 
+  unload() {
+    this.snakes.forEach(snake => snake.delete());
+  }
+
   draw(context) {
     // Draw each snake in the snakes array
     this.snakes.forEach(snake => snake.draw(context));
