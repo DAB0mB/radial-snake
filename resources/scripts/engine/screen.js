@@ -28,6 +28,13 @@ Engine.Screen = class Screen {
     return this;
   }
 
+   // Delete all layers. Same as 'unload', only it disposes memory rather than assets
+  delete() {
+    this.layers.forEach(layer => {
+      layer.delete();
+    });
+  }
+
   // Updates each layer
   update(span) {
     this.layers.forEach(layer => {
@@ -61,6 +68,7 @@ Engine.Screen = class Screen {
   removeLayer(layer) {
     this.layers = _.without(this.layers, layer);
     layer.disposeEventListeners();
+    layer.delete();
   }
 
   initEventListeners() {
