@@ -3,6 +3,10 @@ describe("Engine.Geometry.Line class", function() {
     this.line = new Engine.Geometry.Line(-5, -5, 5, 5);
   });
 
+  afterEach(function () {
+    this.line.delete();
+  });
+
   describe("getX method", function() {
     describe("given inranged y", function() {
       it("returns x", function() {
@@ -58,6 +62,8 @@ describe("Engine.Geometry.Line class", function() {
           x: 1,
           y: 1
         });
+
+        line.delete();
       });
     });
 
@@ -65,6 +71,7 @@ describe("Engine.Geometry.Line class", function() {
       it("returns nothing", function() {
         let line = new Engine.Geometry.Line(-5, -6, 5, 4);
         expect(this.line.getLineIntersection(line)).toBeUndefined();
+        line.delete();
       });
     });
 
@@ -72,6 +79,7 @@ describe("Engine.Geometry.Line class", function() {
       it("returns nothing", function() {
         let line = new Engine.Geometry.Line(10, 10, 10, 15);
         expect(this.line.getLineIntersection(line)).toBeUndefined();
+        line.delete();
       });
     });
   });
