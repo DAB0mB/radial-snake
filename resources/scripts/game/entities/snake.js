@@ -31,6 +31,10 @@ Game.Entities.Snake = class Snake {
     }
   }
 
+  delete() {
+    this.shapes.forEach(shape => shape.delete());
+  }
+
   draw(context) {
     // Draw all shapes in the shapes array
     this.shapes.forEach(shape => {
@@ -229,6 +233,8 @@ Game.Entities.Snake = class Snake {
       [0, height, 0, 0]
     );
 
-    return canvasPolygon.getIntersection(this.lastBit);
+    let result = canvasPolygon.getIntersection(this.lastBit);
+    canvasPolygon.delete();
+    return result;
   }
 };
