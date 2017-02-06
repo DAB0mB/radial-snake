@@ -8,6 +8,10 @@ describe("Engine.Geometry.Polygon class", function() {
     );
   });
 
+  afterEach(function () {
+    this.polygon.delete();
+  });
+
   describe("hasPoint method", function() {
     describe("given contained point", function() {
       it("returns true", function() {
