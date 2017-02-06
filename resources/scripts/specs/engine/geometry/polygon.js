@@ -35,6 +35,8 @@ describe("Engine.Geometry.Polygon class", function() {
           { x: 5, y: 4 },
           { x: 0, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -43,6 +45,8 @@ describe("Engine.Geometry.Polygon class", function() {
         let line = new Engine.Geometry.Line(10, 11, 15, 14);
 
         expect(this.polygon.getLineIntersection(line)).toBeUndefined();
+
+        line.delete();
       });
     });
   });
