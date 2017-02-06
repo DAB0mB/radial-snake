@@ -95,6 +95,7 @@ Engine.Game = class Game {
   changeScreen(Screen, ...screenArgs) {
     // If there is a screen defined, dispose it first
     if (this.screen) {
+      this.screen.delete();
       this.unloadScreen();
       this.screen.disposeEventListeners();
     }
