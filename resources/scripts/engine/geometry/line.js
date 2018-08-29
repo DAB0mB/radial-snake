@@ -4,35 +4,41 @@ Engine.Geometry.Line = class Line {
   // x1 - The second point's x value
   // y2 - The second point's y value
   constructor(x1, y1, x2, y2) {
-    this.x1 = x1.trim(9);
-    this.y1 = y1.trim(9);
-    this.x2 = x2.trim(9);
-    this.y2 = y2.trim(9);
+    this.x1 = Utils.trim(x1, 9);
+    this.y1 = Utils.trim(y1, 9);
+    this.x2 = Utils.trim(x2, 9);
+    this.y2 = Utils.trim(y2, 9);
+  }
+
+  // Draws the line on the given context
+  draw(context) {
+    context.moveTo(this.x1, this.y1);
+    context.lineTo(this.x2, this.y2);
   }
 
   // Gets the matching x value for a given y value
   getX(y) {
-    let x = ((((y - this.y1) * (this.x2 - this.x1)) / (this.y2 - this.y1)) + this.x1).trim(9);
-    if (isNaN(x) || x.isBetween(this.x1, this.x2)) return x;
+    let x = Utils.trim((((y - this.y1) * (this.x2 - this.x1)) / (this.y2 - this.y1)) + this.x1, 9);
+    if (isNaN(x) || Utils.isBetween(x, this.x1, this.x2)) return x;
   }
 
   // Gets the matching y value for a given x value
   getY(x) {
-    let y = ((((x - this.x1) * (this.y2 - this.y1)) / (this.x2 - this.x1)) + this.y1).trim(9);
-    if (isNaN(y) || y.isBetween(this.y1, this.y2)) return y;
+    let y = Utils.trim((((x - this.x1) * (this.y2 - this.y1)) / (this.x2 - this.x1)) + this.y1, 9);
+    if (isNaN(y) || Utils.isBetween(y, this.y1, this.y2)) return y;
   }
 
   // Returns if line has given point
   hasPoint(x, y) {
     if (!this.boundsHavePoint(x, y)) return false;
-    let m = ((this.y2 - this.y1) / (this.x2 - this.x1)).trim(9);
+    let m = Utils.trim((this.y2 - this.y1) / (this.x2 - this.x1), 9);
     return (y - this.y1) / (x - this.x1) == m;
   }
 
   // Returns if given point is contained by the bounds aka cage of line
   boundsHavePoint(x, y) {
-    return x.isBetween(this.x1, this.x2) &&
-    y.isBetween(this.y1, this.y2);
+    return Utils.isBetween(x, this.x1, this.x2) &&
+           Utils.isBetween(y, this.y1, this.y2);
   }
 
   getIntersection(shape) {
@@ -46,15 +52,17 @@ Engine.Geometry.Line = class Line {
 
   // line - line intersection method
   getLineIntersection(line) {
+    // Escape if lines are parallel
     if (!(((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))) return;
 
-    let x = (((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.x1 - line.x2)) - ((this.x1 - this.x2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
-        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))).trim(9);
-    let y = (((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
-        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))).trim(9);
+    // Intersection point formula
+    let x = Utils.trim(((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.x1 - line.x2)) - ((this.x1 - this.x2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
+        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2))), 9);
+    let y = Utils.trim(((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
+        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2))), 9);
 
-    if (x.isBetween(this.x1, this.x2) && x.isBetween(line.x1, line.x2) &&
-       y.isBetween(this.y1, this.y2) && y.isBetween(line.y1, line.y2)) {
+    if (Utils.isBetween(x, this.x1, this.x2) && Utils.isBetween(x, line.x1, line.x2) &&
+        Utils.isBetween(y, this.y1, this.y2) && Utils.isBetween(y, line.y1, line.y2)) {
       return { x, y };
     }
   }

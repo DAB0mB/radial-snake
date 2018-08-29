@@ -31,7 +31,7 @@ Game.Screens.Menu = class Menu extends Engine.Screen {
     ]);
 
     // Play it repeatedly, back and forth
-    this.instructionsAnim.repMode = "full";
+    this.instructionsAnim.repetitionMode = "full";
     this.instructionsAnim.play();
   }
 

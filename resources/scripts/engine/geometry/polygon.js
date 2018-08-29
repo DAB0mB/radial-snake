@@ -1,6 +1,6 @@
 Engine.Geometry.Polygon = class Polygon {
   // bounds - an array of arrays. Each sub-array represents the arguments vector which
-  //   will be invoked by the line's construction method
+  // will be invoked by the line's construction method
   constructor(...bounds) {
     this.bounds = bounds.map(coords => new Engine.Geometry.Line(...coords));
   }

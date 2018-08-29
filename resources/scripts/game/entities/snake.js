@@ -13,8 +13,8 @@ Game.Entities.Snake = class Snake {
     // A snake is made out of many geometry shapes
     this.shapes = [];
     // A snake starts with a line
-    this.currShape = new Engine.Geometry.Line(x, y, x, y);
-    this.shapes.push(this.currShape);
+    this.currentShape = new Engine.Geometry.Line(x, y, x, y);
+    this.shapes.push(this.currentShape);
     // A score can be provided in case we want to reserve previous scores from
     // recent matches
     this.score = options.score || 0;
@@ -39,14 +39,8 @@ Game.Entities.Snake = class Snake {
       context.lineWidth = 3;
       context.beginPath();
 
-      // Use a different drawing method for line and circle
-      if (shape instanceof Engine.Geometry.Line) {
-        context.moveTo(shape.x1, shape.y1);
-        context.lineTo(shape.x2, shape.y2);
-      }
-      else {
-        context.arc(shape.x, shape.y, shape.r, shape.rad1, shape.rad2);
-      }
+      // Each shape has its own unique drawing method
+      shape.draw(context);
 
       context.stroke();
       context.restore();
@@ -63,84 +57,106 @@ Game.Entities.Snake = class Snake {
 
   // Updates shapes array based on progress made
   updateShapes(step, width, height, options = {}) {
-    // Line update logic
-    if (this.currShape instanceof Engine.Geometry.Line) {
-      let lastX = options.lastX || this.x;
-      let lastY = options.lastY || this.y;
-      this.x = options.x || this.currShape.x2;
-      this.y = options.y || this.currShape.y2;
-      this.lastBit = new Engine.Geometry.Line(lastX, lastY, this.x, this.y);
+    this.updateCurrentShape(step, options);
+    this.updateDirection(step, options);
+  }
+
+  // Updates current shape
+  updateCurrentShape(step, options) {
+    if (this.currentShape instanceof Engine.Geometry.Line)
+      return this.updateCurrentLine(options);
+    if (this.currentShape instanceof Engine.Geometry.Circle)
+      return this.updateCurrentCircle(options);
+  }
+
+  // Updates current shape in case it is a line
+  updateCurrentLine(options) {
+    let lastX = options.lastX || this.x;
+    let lastY = options.lastY || this.y;
+    this.x = options.x || this.currentShape.x2;
+    this.y = options.y || this.currentShape.y2;
+    this.lastBit = new Engine.Geometry.Line(lastX, lastY, this.x, this.y);
+  }
+
+  // Updates current shape in case it is a circle
+  updateCurrentCircle(options) {
+    let lastX = options.lastX || this.currentShape.x;
+    let lastY = options.lastY || this.currentShape.y;
+    let lastR = options.lastR || this.currentShape.r;
+
+    // Update logic for left rotation
+    if (this.direction == "left") {
+      let lastRad = this.rad + (0.5 * Math.PI);
+      let currentShapePoint = this.currentShape.getPoint(this.currentShape.rad1);
+      this.x = options.x || currentShapePoint.x;
+      this.y = options.y || currentShapePoint.y;
+      this.rad = this.currentShape.rad1 - (0.5 * Math.PI);
+      this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, this.currentShape.rad1, lastRad);
     }
-    // Circle update logic
+    // Update logic for right rotation
     else {
-      let lastX = options.lastX || this.currShape.x;
-      let lastY = options.lastY || this.currShape.y;
-      let lastR = options.lastR || this.currShape.r;
-
-      // Update logic for left rotation
-      if (this.direction == "left") {
-        let lastRad = this.rad + (0.5 * Math.PI);
-        let currShapePoint = this.currShape.getPoint(this.currShape.rad1);
-        this.x = options.x || currShapePoint.x;
-        this.y = options.y || currShapePoint.y;
-        this.rad = this.currShape.rad1 - (0.5 * Math.PI);
-        this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, this.currShape.rad1, lastRad);
-      }
-      // Update logic for right rotation
-      else {
-        let lastRad = this.rad - (0.5 * Math.PI);
-        let currShapePoint = this.currShape.getPoint(this.currShape.rad2);
-        this.x = options.x || currShapePoint.x;
-        this.y = options.y || currShapePoint.y;
-        this.rad = this.currShape.rad2 + (0.5 * Math.PI);
-        this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, lastRad, this.currShape.rad2);
-      }
+      let lastRad = this.rad - (0.5 * Math.PI);
+      let currentShapePoint = this.currentShape.getPoint(this.currentShape.rad2);
+      this.x = options.x || currentShapePoint.x;
+      this.y = options.y || currentShapePoint.y;
+      this.rad = this.currentShape.rad2 + (0.5 * Math.PI);
+      this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, lastRad, this.currentShape.rad2);
     }
+  }
 
+  updateDirection(step, options) {
     // Update the direction based on pressed key
     if (this.keyStates.get(this.leftKey))
       var direction = "left";
     else if (this.keyStates.get(this.rightKey))
       var direction = "right";
 
-    // If there is no change direction, abort, unless we force it
-    if (direction != this.direction || options.force) {
-      this.direction = direction;
+    this.changeDirection(step, direction, options);
+    this.continueDirection(step, direction, options);
+  }
 
-      // This will push a new shape with new properties, based on the direction
-      switch (direction) {
-        case "left":
-          var angle = this.rad - (0.5 * Math.PI);
-          var rad = this.rad + (0.5 * Math.PI);
-          var x = this.x + (this.r * Math.cos(angle));
-          var y = this.y + (this.r * Math.sin(angle));
-          this.currShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
-          break;
-        case "right":
-          angle = this.rad + (0.5 * Math.PI);
-          rad = this.rad - (0.5 * Math.PI);
-          x = this.x + (this.r * Math.cos(angle));
-          y = this.y + (this.r * Math.sin(angle));
-          this.currShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
-          break;
-        default:
-          this.currShape = new Engine.Geometry.Line(this.x, this.y, this.x, this.y);
-      }
+  // Change the recent shape type according to the given direction
+  changeDirection(step, direction, options) {
+    // If there is no change in direction, abort, unless we force it
+    if (direction == this.direction && !options.force) return;
 
-      this.shapes.push(this.currShape);
-    }
+    this.direction = direction;
 
-    // Extend the recent shape based on progress made
+    // This will push a new shape with new properties, based on the direction
     switch (direction) {
       case "left":
-        this.currShape.rad1 -= step / this.r;
+        var angle = this.rad - (0.5 * Math.PI);
+        var rad = this.rad + (0.5 * Math.PI);
+        var x = this.x + (this.r * Math.cos(angle));
+        var y = this.y + (this.r * Math.sin(angle));
+        this.currentShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
         break;
       case "right":
-        this.currShape.rad2 += step / this.r;
+        angle = this.rad + (0.5 * Math.PI);
+        rad = this.rad - (0.5 * Math.PI);
+        x = this.x + (this.r * Math.cos(angle));
+        y = this.y + (this.r * Math.sin(angle));
+        this.currentShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
         break;
       default:
-        this.currShape.x2 += step * Math.cos(this.rad);
-        this.currShape.y2 += step * Math.sin(this.rad);
+        this.currentShape = new Engine.Geometry.Line(this.x, this.y, this.x, this.y);
+    }
+
+    this.shapes.push(this.currentShape);
+  }
+
+  // Extend the recent shape based on progress made
+  continueDirection(step, direction) {
+    switch (direction) {
+      case "left":
+        this.currentShape.rad1 -= step / this.r;
+        break;
+      case "right":
+        this.currentShape.rad2 += step / this.r;
+        break;
+      default:
+        this.currentShape.x2 += step * Math.cos(this.rad);
+        this.currentShape.y2 += step * Math.sin(this.rad);
     }
   }
 
@@ -155,9 +171,9 @@ Game.Entities.Snake = class Snake {
 
     // Re-calculate position based on canvas bounds
     if (intersectionPoint.x % width == 0)
-      this.x = (this.x - width).mod(width);
+      this.x = Utils.mod(this.x - width, width);
     if (intersectionPoint.y % height == 0)
-      this.y = (this.y - height).mod(height);
+      this.y = Utils.mod(this.y - height, height);
 
     // Update shapes again based on custom properties
     this.updateShapes(step, width, height, {
@@ -171,14 +187,14 @@ Game.Entities.Snake = class Snake {
 
   // Gets intersection points between last bit and own shapes
   getSelfIntersection() {
-    if (this.currShape instanceof Engine.Geometry.Circle &&
-       Math.abs(this.currShape.rad1 - this.currShape.rad2) >= 2 * Math.PI) {
+    if (this.currentShape instanceof Engine.Geometry.Circle &&
+       Math.abs(this.currentShape.rad1 - this.currentShape.rad2) >= 2 * Math.PI) {
       if (this.direction == "left")
-        var rad = this.currShape.rad1;
+        var rad = this.currentShape.rad1;
       else
-        var rad = this.currShape.rad2;
+        var rad = this.currentShape.rad2;
 
-      return this.currShape.getPoint(rad);
+      return this.currentShape.getPoint(rad);
     }
 
     let result;

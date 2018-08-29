@@ -6,84 +6,92 @@
 
 In this step we will be creating all the necessary geometry shapes to form a snake; we're basically implementing the right infrastructure so in the next step we will be able to implement the game screen with ease. What exactly do I mean by "geometry shapes"? Well, our snake will be made out of circles, and lines. If we don't press any buttons at all, the snake should move forward at a straight line, and once we press on one of the arrow keys, the snake should move in a circular motion. Not only we want to draw the screen on the canvas, we also want to be able to detect collision with other snakes, since this is a "Tron" style game where we gonna fight against an opponent.
 
-Keep in mind that a computer's precision is limited due its [binary representation in memory](https://en.wikipedia.org/wiki/Memory_cell_(binary)). We need to take into consideration that there might be a significant deviation when detecting collisions and intersections between geometry shapes, especially when elapsed time is not always guaranteed to stay precise. To handle these deviation issues, we're gonna create some utility functions and place then as an extension for the `Number` prototype:
+Keep in mind that a computer's precision is limited due its [binary representation in memory](https://en.wikipedia.org/wiki/Memory_cell_(binary)). We need to take into consideration that there might be a significant deviation when detecting collisions and intersections between geometry shapes, especially when elapsed time is not always guaranteed to stay precise. To handle these deviation issues, we're gonna create some utility functions and place then in a new module called `Utils`:
 
 [{]: <helper> (diff_step 5.1)
-#### Step 5.1: Extend 'Number' prototype
+#### Step 5.1: Create utilities module
 
-##### Added resources/scripts/extensions.js
+##### Added resources/scripts/utils.js
 ```diff
-@@ -0,0 +1,70 @@
-+┊  ┊ 1┊Object.defineProperties(Number.prototype, {
-+┊  ┊ 2┊  // Fixed modulo method which can calculate modulo of negative numbers properly
-+┊  ┊ 3┊  // e.g., (-803).mod(800) returns 797
-+┊  ┊ 4┊  "mod": {
-+┊  ┊ 5┊    value(num) {
-+┊  ┊ 6┊      return ((this % num) + num) % num;
-+┊  ┊ 7┊    }
-+┊  ┊ 8┊  },
-+┊  ┊ 9┊
-+┊  ┊10┊  // Trims number and leaves the number of decimals specified.
-+┊  ┊11┊  // The "mode" argument specifies which math function should be invoked
-+┊  ┊12┊  // right after the number has been trimmed.
-+┊  ┊13┊  // e.g. 12.12345.trim(3, "ceil") returns 12.124
-+┊  ┊14┊  "trim": {
-+┊  ┊15┊    value(decimals, mode = "round") {
-+┊  ┊16┊      return Math[mode](this * Math.pow(10, decimals)) / Math.pow(10, decimals);
-+┊  ┊17┊    }
-+┊  ┊18┊  },
-+┊  ┊19┊
-+┊  ┊20┊  // Tells if number is in specified range based on given precision.
-+┊  ┊21┊  // See the "compare" method for more information about precision
-+┊  ┊22┊  "isBetween": {
-+┊  ┊23┊    value(num1, num2, precision) {
-+┊  ┊24┊      return this.compare(Math.min(num1, num2), ">=", precision) &&
-+┊  ┊25┊      this.compare(Math.max(num1, num2), "<=", precision);
-+┊  ┊26┊    }
-+┊  ┊27┊  },
-+┊  ┊28┊
-+┊  ┊29┊  // Initiates comparison operator between this number and a given number, only here
-+┊  ┊30┊  // a precision can be specified
-+┊  ┊31┊  "compare": {
-+┊  ┊32┊    value(num) {
-+┊  ┊33┊      switch (arguments.length) {
-+┊  ┊34┊        case 2:
-+┊  ┊35┊          var precision = arguments[1];
-+┊  ┊36┊          break;
-+┊  ┊37┊        case 3:
-+┊  ┊38┊          var method = arguments[1];
-+┊  ┊39┊          precision = arguments[2];
-+┊  ┊40┊          break;
-+┊  ┊41┊      }
-+┊  ┊42┊
-+┊  ┊43┊      switch (precision) {
-+┊  ┊44┊        // Fixed precision, "almost equal" with a deviation of ε
-+┊  ┊45┊        case "f":
-+┊  ┊46┊          switch (method) {
-+┊  ┊47┊            case "<": case "<=": return this <= num + Number.EPSILON;
-+┊  ┊48┊            case ">": case ">=": return this >= num - Number.EPSILON;
-+┊  ┊49┊            default: return Math.abs(this - num) <= Number.EPSILON;
-+┊  ┊50┊          }
-+┊  ┊51┊        // Pixel precision, round comparison
-+┊  ┊52┊        case "px":
-+┊  ┊53┊          switch (method) {
-+┊  ┊54┊            case "<": case "<=": return Math.round(this) <= Math.round(num);
-+┊  ┊55┊            case ">": case ">=": return Math.round(this) >= Math.round(num);
-+┊  ┊56┊            default: return Math.round(this) == Math.round(num);
-+┊  ┊57┊          }
-+┊  ┊58┊        // Exact precision
-+┊  ┊59┊        default:
-+┊  ┊60┊          switch (method) {
-+┊  ┊61┊            case "<": return this < num;
-+┊  ┊62┊            case "<=": return this <= num;
-+┊  ┊63┊            case ">": return this > num;
-+┊  ┊64┊            case ">=": return this >= num;
-+┊  ┊65┊            default: return this === num;
-+┊  ┊66┊          }
+@@ -0,0 +1,78 @@
++┊  ┊ 1┊// A wrapper function for our utilities which will enable chaining
++┊  ┊ 2┊// e.g. Utils().mod().trim().isBetween()...
++┊  ┊ 3┊Utils = function Utils(context) {
++┊  ┊ 4┊  const chain = {};
++┊  ┊ 5┊
++┊  ┊ 6┊  Object.keys(Utils).forEach((utilName) => {
++┊  ┊ 7┊    chain[utilName] = (...args) => {
++┊  ┊ 8┊      const result = Utils[utilName](context, ...args);
++┊  ┊ 9┊      return Utils(result);
++┊  ┊10┊    };
++┊  ┊11┊  });
++┊  ┊12┊
++┊  ┊13┊  // Returns the result of the chaining
++┊  ┊14┊  chain.value = () => context;
++┊  ┊15┊
++┊  ┊16┊  return chain;
++┊  ┊17┊};
++┊  ┊18┊
++┊  ┊19┊// Fixed modulo method which can calculate modulo of negative numbers properly
++┊  ┊20┊// e.g. (-803).mod(800) returns 797
++┊  ┊21┊Utils.mod = function (context, num) {
++┊  ┊22┊  return ((context % num) + num) % num;
++┊  ┊23┊};
++┊  ┊24┊
++┊  ┊25┊// Trims number and leaves the number of decimals specified.
++┊  ┊26┊// The "mode" argument specifies which math function should be invoked
++┊  ┊27┊// right after the number has been trimmed.
++┊  ┊28┊// e.g. 12.12345.trim(3, "ceil") returns 12.124
++┊  ┊29┊Utils.trim = function (context, decimals, mode = "round") {
++┊  ┊30┊  return Math[mode](context * Math.pow(10, decimals)) / Math.pow(10, decimals);
++┊  ┊31┊};
++┊  ┊32┊
++┊  ┊33┊// Tells if number is in specified range based on given precision.
++┊  ┊34┊// See the "compare" method for more information about precision
++┊  ┊35┊Utils.isBetween = function (context, num1, num2, precision) {
++┊  ┊36┊  return Utils.compare(context, Math.min(num1, num2), ">=", precision) &&
++┊  ┊37┊         Utils.compare(context, Math.max(num1, num2), "<=", precision);
++┊  ┊38┊};
++┊  ┊39┊
++┊  ┊40┊// Initiates comparison operator between context number and a given number, only here
++┊  ┊41┊// a precision can be specified
++┊  ┊42┊Utils.compare = function (context, num, method, precision) {
++┊  ┊43┊  switch (arguments.length) {
++┊  ┊44┊    case 2:
++┊  ┊45┊      var precision = arguments[1];
++┊  ┊46┊      break;
++┊  ┊47┊    case 3:
++┊  ┊48┊      var method = arguments[1];
++┊  ┊49┊      precision = arguments[2];
++┊  ┊50┊      break;
++┊  ┊51┊  }
++┊  ┊52┊
++┊  ┊53┊  switch (precision) {
++┊  ┊54┊    // Fixed precision, "almost equal" with a deviation of ε
++┊  ┊55┊    case "f":
++┊  ┊56┊      switch (method) {
++┊  ┊57┊        case "<": case "<=": return context <= num + Number.EPSILON;
++┊  ┊58┊        case ">": case ">=": return context >= num - Number.EPSILON;
++┊  ┊59┊        default: return Math.abs(context - num) <= Number.EPSILON;
++┊  ┊60┊      }
++┊  ┊61┊    // Pixel precision, round comparison
++┊  ┊62┊    case "px":
++┊  ┊63┊      switch (method) {
++┊  ┊64┊        case "<": case "<=": return Math.round(context) <= Math.round(num);
++┊  ┊65┊        case ">": case ">=": return Math.round(context) >= Math.round(num);
++┊  ┊66┊        default: return Math.round(context) == Math.round(num);
 +┊  ┊67┊      }
-+┊  ┊68┊    }
-+┊  ┊69┊  }
-+┊  ┊70┊});🚫↵
++┊  ┊68┊    // Exact precision
++┊  ┊69┊    default:
++┊  ┊70┊      switch (method) {
++┊  ┊71┊        case "<": return context < num;
++┊  ┊72┊        case "<=": return context <= num;
++┊  ┊73┊        case ">": return context > num;
++┊  ┊74┊        case ">=": return context >= num;
++┊  ┊75┊        default: return context === num;
++┊  ┊76┊      }
++┊  ┊77┊  }
++┊  ┊78┊};🚫↵
 ```
 
 ##### Changed views/game.html
@@ -92,7 +100,7 @@ Keep in mind that a computer's precision is limited due its [binary representati
  ┊ 8┊ 8┊    <script type="text/javascript" src="/libs/underscore.js"></script>
  ┊ 9┊ 9┊
  ┊10┊10┊    <!-- Scripts -->
-+┊  ┊11┊    <script type="text/javascript" src="/scripts/extensions.js"></script>
++┊  ┊11┊    <script type="text/javascript" src="/scripts/utils.js"></script>
  ┊11┊12┊    <script type="text/javascript" src="/scripts/namespaces.js"></script>
  ┊12┊13┊    <script type="text/javascript" src="/scripts/engine/restorable.js"></script>
  ┊13┊14┊    <script type="text/javascript" src="/scripts/engine/font.js"></script>
@@ -124,71 +132,79 @@ And now that we have this module available to use, we can go ahead and implement
 
 ##### Added resources/scripts/engine/geometry/line.js
 ```diff
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,65 @@
 +┊  ┊ 1┊Engine.Geometry.Line = class Line {
 +┊  ┊ 2┊  // x1 - The first point's x value
 +┊  ┊ 3┊  // y1 - The first point's y value
 +┊  ┊ 4┊  // x1 - The second point's x value
 +┊  ┊ 5┊  // y2 - The second point's y value
 +┊  ┊ 6┊  constructor(x1, y1, x2, y2) {
-+┊  ┊ 7┊    this.x1 = x1.trim(9);
-+┊  ┊ 8┊    this.y1 = y1.trim(9);
-+┊  ┊ 9┊    this.x2 = x2.trim(9);
-+┊  ┊10┊    this.y2 = y2.trim(9);
++┊  ┊ 7┊    this.x1 = Utils.trim(x1, 9);
++┊  ┊ 8┊    this.y1 = Utils.trim(y1, 9);
++┊  ┊ 9┊    this.x2 = Utils.trim(x2, 9);
++┊  ┊10┊    this.y2 = Utils.trim(y2, 9);
 +┊  ┊11┊  }
 +┊  ┊12┊
-+┊  ┊13┊  // Gets the matching x value for a given y value
-+┊  ┊14┊  getX(y) {
-+┊  ┊15┊    let x = ((((y - this.y1) * (this.x2 - this.x1)) / (this.y2 - this.y1)) + this.x1).trim(9);
-+┊  ┊16┊    if (isNaN(x) || x.isBetween(this.x1, this.x2)) return x;
++┊  ┊13┊  // Draws the line on the given context
++┊  ┊14┊  draw(context) {
++┊  ┊15┊    context.moveTo(this.x1, this.y1);
++┊  ┊16┊    context.lineTo(this.x2, this.y2);
 +┊  ┊17┊  }
 +┊  ┊18┊
-+┊  ┊19┊  // Gets the matching y value for a given x value
-+┊  ┊20┊  getY(x) {
-+┊  ┊21┊    let y = ((((x - this.x1) * (this.y2 - this.y1)) / (this.x2 - this.x1)) + this.y1).trim(9);
-+┊  ┊22┊    if (isNaN(y) || y.isBetween(this.y1, this.y2)) return y;
++┊  ┊19┊  // Gets the matching x value for a given y value
++┊  ┊20┊  getX(y) {
++┊  ┊21┊    let x = Utils.trim((((y - this.y1) * (this.x2 - this.x1)) / (this.y2 - this.y1)) + this.x1, 9);
++┊  ┊22┊    if (isNaN(x) || Utils.isBetween(x, this.x1, this.x2)) return x;
 +┊  ┊23┊  }
 +┊  ┊24┊
-+┊  ┊25┊  // Returns if line has given point
-+┊  ┊26┊  hasPoint(x, y) {
-+┊  ┊27┊    if (!this.boundsHavePoint(x, y)) return false;
-+┊  ┊28┊    let m = ((this.y2 - this.y1) / (this.x2 - this.x1)).trim(9);
-+┊  ┊29┊    return (y - this.y1) / (x - this.x1) == m;
-+┊  ┊30┊  }
-+┊  ┊31┊
-+┊  ┊32┊  // Returns if given point is contained by the bounds aka cage of line
-+┊  ┊33┊  boundsHavePoint(x, y) {
-+┊  ┊34┊    return x.isBetween(this.x1, this.x2) &&
-+┊  ┊35┊    y.isBetween(this.y1, this.y2);
++┊  ┊25┊  // Gets the matching y value for a given x value
++┊  ┊26┊  getY(x) {
++┊  ┊27┊    let y = Utils.trim((((x - this.x1) * (this.y2 - this.y1)) / (this.x2 - this.x1)) + this.y1, 9);
++┊  ┊28┊    if (isNaN(y) || Utils.isBetween(y, this.y1, this.y2)) return y;
++┊  ┊29┊  }
++┊  ┊30┊
++┊  ┊31┊  // Returns if line has given point
++┊  ┊32┊  hasPoint(x, y) {
++┊  ┊33┊    if (!this.boundsHavePoint(x, y)) return false;
++┊  ┊34┊    let m = Utils.trim((this.y2 - this.y1) / (this.x2 - this.x1), 9);
++┊  ┊35┊    return (y - this.y1) / (x - this.x1) == m;
 +┊  ┊36┊  }
 +┊  ┊37┊
-+┊  ┊38┊  getIntersection(shape) {
-+┊  ┊39┊    if (shape instanceof Engine.Geometry.Line)
-+┊  ┊40┊      return this.getLineIntersection(shape);
-+┊  ┊41┊  }
-+┊  ┊42┊
-+┊  ┊43┊  // line - line intersection method
-+┊  ┊44┊  getLineIntersection(line) {
-+┊  ┊45┊    if (!(((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))) return;
-+┊  ┊46┊
-+┊  ┊47┊    let x = (((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.x1 - line.x2)) - ((this.x1 - this.x2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
-+┊  ┊48┊        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))).trim(9);
-+┊  ┊49┊    let y = (((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
-+┊  ┊50┊        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))).trim(9);
-+┊  ┊51┊
-+┊  ┊52┊    if (x.isBetween(this.x1, this.x2) && x.isBetween(line.x1, line.x2) &&
-+┊  ┊53┊       y.isBetween(this.y1, this.y2) && y.isBetween(line.y1, line.y2)) {
-+┊  ┊54┊      return { x, y };
-+┊  ┊55┊    }
-+┊  ┊56┊  }
-+┊  ┊57┊};🚫↵
++┊  ┊38┊  // Returns if given point is contained by the bounds aka cage of line
++┊  ┊39┊  boundsHavePoint(x, y) {
++┊  ┊40┊    return Utils.isBetween(x, this.x1, this.x2) &&
++┊  ┊41┊           Utils.isBetween(y, this.y1, this.y2);
++┊  ┊42┊  }
++┊  ┊43┊
++┊  ┊44┊  getIntersection(shape) {
++┊  ┊45┊    if (shape instanceof Engine.Geometry.Line)
++┊  ┊46┊      return this.getLineIntersection(shape);
++┊  ┊47┊  }
++┊  ┊48┊
++┊  ┊49┊  // line - line intersection method
++┊  ┊50┊  getLineIntersection(line) {
++┊  ┊51┊    // Escape if lines are parallel
++┊  ┊52┊    if (!(((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2)))) return;
++┊  ┊53┊
++┊  ┊54┊    // Intersection point formula
++┊  ┊55┊    let x = Utils.trim(((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.x1 - line.x2)) - ((this.x1 - this.x2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
++┊  ┊56┊        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2))), 9);
++┊  ┊57┊    let y = Utils.trim(((((this.x1 * this.y2) - (this.y1 * this.x2)) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * ((line.x1 * line.y2) - (line.y1 * line.x2)))) /
++┊  ┊58┊        (((this.x1 - this.x2) * (line.y1 - line.y2)) - ((this.y1 - this.y2) * (line.x1 - line.x2))), 9);
++┊  ┊59┊
++┊  ┊60┊    if (Utils.isBetween(x, this.x1, this.x2) && Utils.isBetween(x, line.x1, line.x2) &&
++┊  ┊61┊        Utils.isBetween(y, this.y1, this.y2) && Utils.isBetween(y, line.y1, line.y2)) {
++┊  ┊62┊      return { x, y };
++┊  ┊63┊    }
++┊  ┊64┊  }
++┊  ┊65┊};🚫↵
 ```
 
 ##### Changed views/game.html
 ```diff
 @@ -10,6 +10,7 @@
  ┊10┊10┊    <!-- Scripts -->
- ┊11┊11┊    <script type="text/javascript" src="/scripts/extensions.js"></script>
+ ┊11┊11┊    <script type="text/javascript" src="/scripts/utils.js"></script>
  ┊12┊12┊    <script type="text/javascript" src="/scripts/namespaces.js"></script>
 +┊  ┊13┊    <script type="text/javascript" src="/scripts/engine/geometry/line.js"></script>
  ┊13┊14┊    <script type="text/javascript" src="/scripts/engine/restorable.js"></script>
@@ -246,7 +262,7 @@ These essentials should be loaded in a newly created view where we're gonna see 
 +┊  ┊16┊    <script type="text/javascript" src="libs/underscore.js"></script>
 +┊  ┊17┊
 +┊  ┊18┊    <!-- Scripts -->
-+┊  ┊19┊    <script type="text/javascript" src="scripts/extensions.js"></script>
++┊  ┊19┊    <script type="text/javascript" src="scripts/utils.js"></script>
 +┊  ┊20┊    <script type="text/javascript" src="scripts/namespaces.js"></script>
 +┊  ┊21┊
 +┊  ┊22┊    <!-- Specs -->
@@ -350,7 +366,7 @@ Now once we'll navigate to the `/test` sub-route (`localhost:8000/test` by defau
 ```diff
 @@ -18,8 +18,10 @@
  ┊18┊18┊    <!-- Scripts -->
- ┊19┊19┊    <script type="text/javascript" src="scripts/extensions.js"></script>
+ ┊19┊19┊    <script type="text/javascript" src="scripts/utils.js"></script>
  ┊20┊20┊    <script type="text/javascript" src="scripts/namespaces.js"></script>
 +┊  ┊21┊    <script type="text/javascript" src="scripts/engine/geometry/line.js"></script>
  ┊21┊22┊
@@ -369,7 +385,7 @@ Now if you'll refresh the spec runner page you should be able to a green screen 
 
 ##### Added resources/scripts/engine/geometry/circle.js
 ```diff
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,167 @@
 +┊   ┊  1┊Engine.Geometry.Circle = class Circle {
 +┊   ┊  2┊  // x - The x value of the circle's center
 +┊   ┊  3┊  // y - The y value of the circle's center
@@ -377,166 +393,172 @@ Now if you'll refresh the spec runner page you should be able to a green screen 
 +┊   ┊  5┊  // rad1 - The first radian of the circle, not necessarily its beginning
 +┊   ┊  6┊  // rad2 - The second radian of the circle, not necessarily its beginning
 +┊   ┊  7┊  constructor(x, y, r, rad1, rad2) {
-+┊   ┊  8┊    this.x = x.trim(9);
-+┊   ┊  9┊    this.y = y.trim(9);
-+┊   ┊ 10┊    this.r = r.trim(9);
++┊   ┊  8┊    this.x = Utils.trim(x, 9);
++┊   ┊  9┊    this.y = Utils.trim(y, 9);
++┊   ┊ 10┊    this.r = Utils.trim(r, 9);
 +┊   ┊ 11┊
 +┊   ┊ 12┊    // Trimming mode is done based on which radian represents the ending and which radian
 +┊   ┊ 13┊    // represents the ending
 +┊   ┊ 14┊    if (rad1 > rad2) {
-+┊   ┊ 15┊      this.rad1 = rad1.trim(9, "floor");
-+┊   ┊ 16┊      this.rad2 = rad2.trim(9, "ceil");
++┊   ┊ 15┊      this.rad1 = Utils.trim(rad1, 9, "floor");
++┊   ┊ 16┊      this.rad2 = Utils.trim(rad2, 9, "ceil");
 +┊   ┊ 17┊    }
 +┊   ┊ 18┊    else {
-+┊   ┊ 19┊      this.rad1 = rad1.trim(9, "ceil");
-+┊   ┊ 20┊      this.rad2 = rad2.trim(9, "floor");
++┊   ┊ 19┊      this.rad1 = Utils.trim(rad1, 9, "ceil");
++┊   ┊ 20┊      this.rad2 = Utils.trim(rad2, 9, "floor");
 +┊   ┊ 21┊    }
 +┊   ┊ 22┊  }
 +┊   ┊ 23┊
-+┊   ┊ 24┊  // Gets the matching x value for the given radian
-+┊   ┊ 25┊  getX(rad) {
-+┊   ┊ 26┊    if (!rad.trim(9).isBetween(this.rad1, this.rad2)) return;
-+┊   ┊ 27┊    return ((this.r * Math.cos(rad)) + this.x).trim(9);
-+┊   ┊ 28┊  }
-+┊   ┊ 29┊
-+┊   ┊ 30┊  // Gets the matching y value for the given radian
-+┊   ┊ 31┊  getY(rad) {
-+┊   ┊ 32┊    if (!rad.trim(9).isBetween(this.rad1, this.rad2)) return;
-+┊   ┊ 33┊    return ((this.r * Math.sin(rad)) + this.y).trim(9);
-+┊   ┊ 34┊  }
-+┊   ┊ 35┊
-+┊   ┊ 36┊  // Gets the matching point for the given radian
-+┊   ┊ 37┊  getPoint(rad) {
-+┊   ┊ 38┊    if (!rad.isBetween(this.rad1, this.rad2)) return;
-+┊   ┊ 39┊
-+┊   ┊ 40┊    return {
-+┊   ┊ 41┊      x: ((this.r * Math.cos(rad)) + this.x).trim(9),
-+┊   ┊ 42┊      y: ((this.r * Math.sin(rad)) + this.y).trim(9)
-+┊   ┊ 43┊    };
-+┊   ┊ 44┊  }
-+┊   ┊ 45┊
-+┊   ┊ 46┊  // Gets the matching radian for the given point
-+┊   ┊ 47┊  getRad(x, y) {
-+┊   ┊ 48┊    let rad = Math.atan2(y - this.y, x - this.x);
-+┊   ┊ 49┊
-+┊   ┊ 50┊    // If calculated radian is in circle's radian range, return it
-+┊   ┊ 51┊    if (rad != null && rad.isBetween(this.rad1, this.rad2)) {
-+┊   ┊ 52┊      return rad;
-+┊   ┊ 53┊    }
++┊   ┊ 24┊  // Draws the circle on the given context
++┊   ┊ 25┊  draw(context) {
++┊   ┊ 26┊    context.arc(this.x, this.y, this.r, this.rad1, this.rad2);
++┊   ┊ 27┊  }
++┊   ┊ 28┊
++┊   ┊ 29┊  // Gets the matching x value for the given radian
++┊   ┊ 30┊  getX(rad) {
++┊   ┊ 31┊    if (!Utils(rad).trim(9).isBetween(this.rad1, this.rad2).value()) return;
++┊   ┊ 32┊    return Utils.trim((this.r * Math.cos(rad)) + this.x, 9);
++┊   ┊ 33┊  }
++┊   ┊ 34┊
++┊   ┊ 35┊  // Gets the matching y value for the given radian
++┊   ┊ 36┊  getY(rad) {
++┊   ┊ 37┊    if (!Utils(rad).trim(9).isBetween(this.rad1, this.rad2).value()) return;
++┊   ┊ 38┊    return Utils.trim((this.r * Math.sin(rad)) + this.y, 9);
++┊   ┊ 39┊  }
++┊   ┊ 40┊
++┊   ┊ 41┊  // Gets the matching point for the given radian
++┊   ┊ 42┊  getPoint(rad) {
++┊   ┊ 43┊    if (!Utils.isBetween(rad, this.rad1, this.rad2)) return;
++┊   ┊ 44┊
++┊   ┊ 45┊    return {
++┊   ┊ 46┊      x: Utils.trim((this.r * Math.cos(rad)) + this.x, 9),
++┊   ┊ 47┊      y: Utils.trim((this.r * Math.sin(rad)) + this.y, 9)
++┊   ┊ 48┊    };
++┊   ┊ 49┊  }
++┊   ┊ 50┊
++┊   ┊ 51┊  // Gets the matching radian for the given point
++┊   ┊ 52┊  getRad(x, y) {
++┊   ┊ 53┊    let rad = Math.atan2(y - this.y, x - this.x);
 +┊   ┊ 54┊
-+┊   ┊ 55┊    // The calculated radian can still be in the circle's radian range in case
-+┊   ┊ 56┊    // they completed several whole circles
-+┊   ┊ 57┊    if (Math.abs(this.rad1) > Math.abs(this.rad2)) {
-+┊   ┊ 58┊      var cycRad = this.rad1;
-+┊   ┊ 59┊    }
-+┊   ┊ 60┊    else {
-+┊   ┊ 61┊      var cycRad = this.rad2;
-+┊   ┊ 62┊    }
-+┊   ┊ 63┊
-+┊   ┊ 64┊    if ((rad + (2 * Math.PI * Math.floor(cycRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2) ||
-+┊   ┊ 65┊       (rad + (2 * Math.PI * Math.ceil(cycRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2)) {
-+┊   ┊ 66┊      return rad;
++┊   ┊ 55┊    // If calculated radian is in circle's radian range, return it
++┊   ┊ 56┊    if (rad != null && Utils.isBetween(rad, this.rad1, this.rad2)) {
++┊   ┊ 57┊      return rad;
++┊   ┊ 58┊    }
++┊   ┊ 59┊
++┊   ┊ 60┊    // The calculated radian can still be in the circle's radian range in case one
++┊   ┊ 61┊    // of the radians is greater than 2 PIEs
++┊   ┊ 62┊    if (Math.abs(this.rad1) > Math.abs(this.rad2)) {
++┊   ┊ 63┊      var greatestRad = this.rad1;
++┊   ┊ 64┊    }
++┊   ┊ 65┊    else {
++┊   ┊ 66┊      var greatestRad = this.rad2;
 +┊   ┊ 67┊    }
-+┊   ┊ 68┊  }
-+┊   ┊ 69┊
-+┊   ┊ 70┊  // Returns if circle has given points
-+┊   ┊ 71┊  hasPoint(x, y) {
-+┊   ┊ 72┊    return this.getRad(x, y) != null;
-+┊   ┊ 73┊  }
-+┊   ┊ 74┊
-+┊   ┊ 75┊  getIntersection(shape) {
-+┊   ┊ 76┊    if (shape instanceof Engine.Geometry.Line)
-+┊   ┊ 77┊      return this.getLineIntersection(shape);
-+┊   ┊ 78┊    if (shape instanceof Engine.Geometry.Circle)
-+┊   ┊ 79┊      return this.getCircleIntersection(shape);
-+┊   ┊ 80┊  }
-+┊   ┊ 81┊
-+┊   ┊ 82┊  // circle - circle intersection method
-+┊   ┊ 83┊  getCircleIntersection(circle) {
-+┊   ┊ 84┊    let dx = circle.x - this.x;
-+┊   ┊ 85┊    let dy = circle.y - this.y;
-+┊   ┊ 86┊    let d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
++┊   ┊ 68┊
++┊   ┊ 69┊    // Check if the absolute radian is in the circle's radian range
++┊   ┊ 70┊    if (Utils(rad + (2 * Math.PI * Math.floor(greatestRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2).value() ||
++┊   ┊ 71┊        Utils(rad + (2 * Math.PI * Math.ceil(greatestRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2).value()) {
++┊   ┊ 72┊      return rad;
++┊   ┊ 73┊    }
++┊   ┊ 74┊  }
++┊   ┊ 75┊
++┊   ┊ 76┊  // Returns if circle has given points
++┊   ┊ 77┊  hasPoint(x, y) {
++┊   ┊ 78┊    return this.getRad(x, y) != null;
++┊   ┊ 79┊  }
++┊   ┊ 80┊
++┊   ┊ 81┊  getIntersection(shape) {
++┊   ┊ 82┊    if (shape instanceof Engine.Geometry.Line)
++┊   ┊ 83┊      return this.getLineIntersection(shape);
++┊   ┊ 84┊    if (shape instanceof Engine.Geometry.Circle)
++┊   ┊ 85┊      return this.getCircleIntersection(shape);
++┊   ┊ 86┊  }
 +┊   ┊ 87┊
-+┊   ┊ 88┊    if (d > this.r + circle.r ||
-+┊   ┊ 89┊       d < Math.abs(this.r - circle.r)) {
-+┊   ┊ 90┊      return;
-+┊   ┊ 91┊    }
-+┊   ┊ 92┊
-+┊   ┊ 93┊    let a = ((Math.pow(this.r, 2) - Math.pow(circle.r, 2)) + Math.pow(d, 2)) / (2 * d);
-+┊   ┊ 94┊    let x = this.x + ((dx * a) / d);
-+┊   ┊ 95┊    let y = this.y + ((dy * a) / d);
-+┊   ┊ 96┊    let h = Math.sqrt(Math.pow(this.r, 2) - Math.pow(a, 2));
-+┊   ┊ 97┊    let rx = (- dy * h) / d;
-+┊   ┊ 98┊    let ry = (dx * h) / d;
-+┊   ┊ 99┊
-+┊   ┊100┊    let interPoints = [
-+┊   ┊101┊      {
-+┊   ┊102┊        x: x + rx,
-+┊   ┊103┊        y: y + ry
-+┊   ┊104┊      },
-+┊   ┊105┊      {
-+┊   ┊106┊        x: x - rx,
-+┊   ┊107┊        y: y - ry
-+┊   ┊108┊      }
-+┊   ┊109┊    ]
-+┊   ┊110┊    .map(point => ({
-+┊   ┊111┊        x: point.x.trim(9),
-+┊   ┊112┊        y: point.y.trim(9)
-+┊   ┊113┊     }));
-+┊   ┊114┊
-+┊   ┊115┊    interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
-+┊   ┊116┊
-+┊   ┊117┊    [this, circle].forEach(function(circle) {
-+┊   ┊118┊      interPoints = interPoints.filter(point => circle.hasPoint(point.x, point.y));
-+┊   ┊119┊    });
++┊   ┊ 88┊  // circle - circle intersection method
++┊   ┊ 89┊  getCircleIntersection(circle) {
++┊   ┊ 90┊    let dx = circle.x - this.x;
++┊   ┊ 91┊    let dy = circle.y - this.y;
++┊   ┊ 92┊    let d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
++┊   ┊ 93┊
++┊   ┊ 94┊    if (d > this.r + circle.r ||
++┊   ┊ 95┊       d < Math.abs(this.r - circle.r)) {
++┊   ┊ 96┊      return;
++┊   ┊ 97┊    }
++┊   ┊ 98┊
++┊   ┊ 99┊    let a = ((Math.pow(this.r, 2) - Math.pow(circle.r, 2)) + Math.pow(d, 2)) / (2 * d);
++┊   ┊100┊    let x = this.x + ((dx * a) / d);
++┊   ┊101┊    let y = this.y + ((dy * a) / d);
++┊   ┊102┊    let h = Math.sqrt(Math.pow(this.r, 2) - Math.pow(a, 2));
++┊   ┊103┊    let rx = (- dy * h) / d;
++┊   ┊104┊    let ry = (dx * h) / d;
++┊   ┊105┊
++┊   ┊106┊    let interPoints = [
++┊   ┊107┊      {
++┊   ┊108┊        x: x + rx,
++┊   ┊109┊        y: y + ry
++┊   ┊110┊      },
++┊   ┊111┊      {
++┊   ┊112┊        x: x - rx,
++┊   ┊113┊        y: y - ry
++┊   ┊114┊      }
++┊   ┊115┊    ]
++┊   ┊116┊    .map(point => ({
++┊   ┊117┊        x: Utils.trim(point.x, 9),
++┊   ┊118┊        y: Utils.trim(point.y, 9)
++┊   ┊119┊     }));
 +┊   ┊120┊
-+┊   ┊121┊    if (interPoints.length > 0) return interPoints;
-+┊   ┊122┊  }
-+┊   ┊123┊
-+┊   ┊124┊  // circle - line intersection method
-+┊   ┊125┊  getLineIntersection(line) {
-+┊   ┊126┊    let x1 = line.x1 - this.x;
-+┊   ┊127┊    let x2 = line.x2 - this.x;
-+┊   ┊128┊    let y1 = line.y1 - this.y;
-+┊   ┊129┊    let y2 = line.y2 - this.y;
-+┊   ┊130┊    let dx = x2 - x1;
-+┊   ┊131┊    let dy = y2 - y1;
-+┊   ┊132┊    let d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-+┊   ┊133┊    let h = (x1 * y2) - (x2 * y1);
-+┊   ┊134┊    let delta = (Math.pow(this.r, 2) * Math.pow(d, 2)) - Math.pow(h, 2);
-+┊   ┊135┊
-+┊   ┊136┊    if (delta < 0) return;
-+┊   ┊137┊
-+┊   ┊138┊    let interPoints = [
-+┊   ┊139┊      {
-+┊   ┊140┊        x: (((h * dy) + (((dy / Math.abs(dy)) || 1) * dx * Math.sqrt(delta))) / Math.pow(d, 2)) + this.x,
-+┊   ┊141┊        y: (((-h * dx) + (Math.abs(dy) * Math.sqrt(delta))) / Math.pow(d, 2)) + this.y
-+┊   ┊142┊      },
-+┊   ┊143┊      {
-+┊   ┊144┊        x: (((h * dy) - (((dy / Math.abs(dy)) || 1) * dx * Math.sqrt(delta))) / Math.pow(d, 2)) + this.x,
-+┊   ┊145┊        y: (((-h * dx) - (Math.abs(dy) * Math.sqrt(delta))) / Math.pow(d, 2)) + this.y
-+┊   ┊146┊      }
-+┊   ┊147┊    ]
-+┊   ┊148┊    .map(point => ({
-+┊   ┊149┊        x: point.x.trim(9),
-+┊   ┊150┊        y: point.y.trim(9)
-+┊   ┊151┊    }))
-+┊   ┊152┊    .filter(point => {
-+┊   ┊153┊      return this.hasPoint(point.x, point.y) &&
-+┊   ┊154┊        line.boundsHavePoint(point.x, point.y);
-+┊   ┊155┊    });
-+┊   ┊156┊
-+┊   ┊157┊    interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
-+┊   ┊158┊
-+┊   ┊159┊    if (interPoints.length > 0) return interPoints;
-+┊   ┊160┊  }
-+┊   ┊161┊};🚫↵
++┊   ┊121┊    interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
++┊   ┊122┊
++┊   ┊123┊    [this, circle].forEach(function(circle) {
++┊   ┊124┊      interPoints = interPoints.filter(point => circle.hasPoint(point.x, point.y));
++┊   ┊125┊    });
++┊   ┊126┊
++┊   ┊127┊    if (interPoints.length > 0) return interPoints;
++┊   ┊128┊  }
++┊   ┊129┊
++┊   ┊130┊  // circle - line intersection method
++┊   ┊131┊  getLineIntersection(line) {
++┊   ┊132┊    let x1 = line.x1 - this.x;
++┊   ┊133┊    let x2 = line.x2 - this.x;
++┊   ┊134┊    let y1 = line.y1 - this.y;
++┊   ┊135┊    let y2 = line.y2 - this.y;
++┊   ┊136┊    let dx = x2 - x1;
++┊   ┊137┊    let dy = y2 - y1;
++┊   ┊138┊    let d = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
++┊   ┊139┊    let h = (x1 * y2) - (x2 * y1);
++┊   ┊140┊    let delta = (Math.pow(this.r, 2) * Math.pow(d, 2)) - Math.pow(h, 2);
++┊   ┊141┊
++┊   ┊142┊    if (delta < 0) return;
++┊   ┊143┊
++┊   ┊144┊    let interPoints = [
++┊   ┊145┊      {
++┊   ┊146┊        x: (((h * dy) + (((dy / Math.abs(dy)) || 1) * dx * Math.sqrt(delta))) / Math.pow(d, 2)) + this.x,
++┊   ┊147┊        y: (((-h * dx) + (Math.abs(dy) * Math.sqrt(delta))) / Math.pow(d, 2)) + this.y
++┊   ┊148┊      },
++┊   ┊149┊      {
++┊   ┊150┊        x: (((h * dy) - (((dy / Math.abs(dy)) || 1) * dx * Math.sqrt(delta))) / Math.pow(d, 2)) + this.x,
++┊   ┊151┊        y: (((-h * dx) - (Math.abs(dy) * Math.sqrt(delta))) / Math.pow(d, 2)) + this.y
++┊   ┊152┊      }
++┊   ┊153┊    ]
++┊   ┊154┊    .map(point => ({
++┊   ┊155┊        x: Utils.trim(point.x, 9),
++┊   ┊156┊        y: Utils.trim(point.y, 9)
++┊   ┊157┊    }))
++┊   ┊158┊    .filter(point => {
++┊   ┊159┊      return this.hasPoint(point.x, point.y) &&
++┊   ┊160┊        line.boundsHavePoint(point.x, point.y);
++┊   ┊161┊    });
++┊   ┊162┊
++┊   ┊163┊    interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
++┊   ┊164┊
++┊   ┊165┊    if (interPoints.length > 0) return interPoints;
++┊   ┊166┊  }
++┊   ┊167┊};🚫↵
 ```
 
 ##### Changed views/game.html
 ```diff
 @@ -11,6 +11,7 @@
- ┊11┊11┊    <script type="text/javascript" src="/scripts/extensions.js"></script>
+ ┊11┊11┊    <script type="text/javascript" src="/scripts/utils.js"></script>
  ┊12┊12┊    <script type="text/javascript" src="/scripts/namespaces.js"></script>
  ┊13┊13┊    <script type="text/javascript" src="/scripts/engine/geometry/line.js"></script>
 +┊  ┊14┊    <script type="text/javascript" src="/scripts/engine/geometry/circle.js"></script>
@@ -571,27 +593,27 @@ we can find the intersection between a circle and line by solving the systems fo
 
 ##### Changed resources/scripts/engine/geometry/line.js
 ```diff
-@@ -38,6 +38,8 @@
- ┊38┊38┊  getIntersection(shape) {
- ┊39┊39┊    if (shape instanceof Engine.Geometry.Line)
- ┊40┊40┊      return this.getLineIntersection(shape);
-+┊  ┊41┊    if (shape instanceof Engine.Geometry.Circle)
-+┊  ┊42┊      return this.getCircleIntersection(shape);
- ┊41┊43┊  }
- ┊42┊44┊
- ┊43┊45┊  // line - line intersection method
+@@ -44,6 +44,8 @@
+ ┊44┊44┊  getIntersection(shape) {
+ ┊45┊45┊    if (shape instanceof Engine.Geometry.Line)
+ ┊46┊46┊      return this.getLineIntersection(shape);
++┊  ┊47┊    if (shape instanceof Engine.Geometry.Circle)
++┊  ┊48┊      return this.getCircleIntersection(shape);
+ ┊47┊49┊  }
+ ┊48┊50┊
+ ┊49┊51┊  // line - line intersection method
 ```
 ```diff
-@@ -54,4 +56,9 @@
- ┊54┊56┊      return { x, y };
- ┊55┊57┊    }
- ┊56┊58┊  }
-+┊  ┊59┊
-+┊  ┊60┊  // line - circle intersection method
-+┊  ┊61┊  getCircleIntersection(circle) {
-+┊  ┊62┊    return circle.getLineIntersection(this);
-+┊  ┊63┊  }
- ┊57┊64┊};🚫↵
+@@ -62,4 +64,9 @@
+ ┊62┊64┊      return { x, y };
+ ┊63┊65┊    }
+ ┊64┊66┊  }
++┊  ┊67┊
++┊  ┊68┊  // line - circle intersection method
++┊  ┊69┊  getCircleIntersection(circle) {
++┊  ┊70┊    return circle.getLineIntersection(this);
++┊  ┊71┊  }
+ ┊65┊72┊};🚫↵
 ```
 [}]: #
 
@@ -752,7 +774,7 @@ Then again a newly created geometry shape class should be tested against differe
 ##### Changed views/spec_runner.html
 ```diff
 @@ -19,9 +19,11 @@
- ┊19┊19┊    <script type="text/javascript" src="scripts/extensions.js"></script>
+ ┊19┊19┊    <script type="text/javascript" src="scripts/utils.js"></script>
  ┊20┊20┊    <script type="text/javascript" src="scripts/namespaces.js"></script>
  ┊21┊21┊    <script type="text/javascript" src="scripts/engine/geometry/line.js"></script>
 +┊  ┊22┊    <script type="text/javascript" src="scripts/engine/geometry/circle.js"></script>
@@ -776,7 +798,7 @@ Our final shape in the geometry module would be a polygon. Why a polygon? Since 
 @@ -0,0 +1,58 @@
 +┊  ┊ 1┊Engine.Geometry.Polygon = class Polygon {
 +┊  ┊ 2┊  // bounds - an array of arrays. Each sub-array represents the arguments vector which
-+┊  ┊ 3┊  //   will be invoked by the line's construction method
++┊  ┊ 3┊  // will be invoked by the line's construction method
 +┊  ┊ 4┊  constructor(...bounds) {
 +┊  ┊ 5┊    this.bounds = bounds.map(coords => new Engine.Geometry.Line(...coords));
 +┊  ┊ 6┊  }
@@ -854,52 +876,52 @@ Again we will delegate the newly created intersection methods in the `Line` clas
 
 ##### Changed resources/scripts/engine/geometry/circle.js
 ```diff
-@@ -77,6 +77,8 @@
- ┊77┊77┊      return this.getLineIntersection(shape);
- ┊78┊78┊    if (shape instanceof Engine.Geometry.Circle)
- ┊79┊79┊      return this.getCircleIntersection(shape);
-+┊  ┊80┊    if (shape instanceof Engine.Geometry.Polygon)
-+┊  ┊81┊      return this.getPolygonIntersection(shape);
- ┊80┊82┊  }
- ┊81┊83┊
- ┊82┊84┊  // circle - circle intersection method
+@@ -83,6 +83,8 @@
+ ┊83┊83┊      return this.getLineIntersection(shape);
+ ┊84┊84┊    if (shape instanceof Engine.Geometry.Circle)
+ ┊85┊85┊      return this.getCircleIntersection(shape);
++┊  ┊86┊    if (shape instanceof Engine.Geometry.Polygon)
++┊  ┊87┊      return this.getPolygonIntersection(shape);
+ ┊86┊88┊  }
+ ┊87┊89┊
+ ┊88┊90┊  // circle - circle intersection method
 ```
 ```diff
-@@ -158,4 +160,9 @@
- ┊158┊160┊
- ┊159┊161┊    if (interPoints.length > 0) return interPoints;
- ┊160┊162┊  }
-+┊   ┊163┊
-+┊   ┊164┊  // circle - polygon intersection method
-+┊   ┊165┊  getPolygonIntersection(polygon) {
-+┊   ┊166┊    return polygon.getCircleIntersection(this);
-+┊   ┊167┊  }
- ┊161┊168┊};🚫↵
+@@ -164,4 +166,9 @@
+ ┊164┊166┊
+ ┊165┊167┊    if (interPoints.length > 0) return interPoints;
+ ┊166┊168┊  }
++┊   ┊169┊
++┊   ┊170┊  // circle - polygon intersection method
++┊   ┊171┊  getPolygonIntersection(polygon) {
++┊   ┊172┊    return polygon.getCircleIntersection(this);
++┊   ┊173┊  }
+ ┊167┊174┊};🚫↵
 ```
 
 ##### Changed resources/scripts/engine/geometry/line.js
 ```diff
-@@ -40,6 +40,8 @@
- ┊40┊40┊      return this.getLineIntersection(shape);
- ┊41┊41┊    if (shape instanceof Engine.Geometry.Circle)
- ┊42┊42┊      return this.getCircleIntersection(shape);
-+┊  ┊43┊    if (shape instanceof Engine.Geometry.Polygon)
-+┊  ┊44┊      return this.getPolygonIntersection(shape);
- ┊43┊45┊  }
- ┊44┊46┊
- ┊45┊47┊  // line - line intersection method
+@@ -46,6 +46,8 @@
+ ┊46┊46┊      return this.getLineIntersection(shape);
+ ┊47┊47┊    if (shape instanceof Engine.Geometry.Circle)
+ ┊48┊48┊      return this.getCircleIntersection(shape);
++┊  ┊49┊    if (shape instanceof Engine.Geometry.Polygon)
++┊  ┊50┊      return this.getPolygonIntersection(shape);
+ ┊49┊51┊  }
+ ┊50┊52┊
+ ┊51┊53┊  // line - line intersection method
 ```
 ```diff
-@@ -61,4 +63,9 @@
- ┊61┊63┊  getCircleIntersection(circle) {
- ┊62┊64┊    return circle.getLineIntersection(this);
- ┊63┊65┊  }
-+┊  ┊66┊
-+┊  ┊67┊  // line - polygon intersection method
-+┊  ┊68┊  getPolygonIntersection(polygon) {
-+┊  ┊69┊    return polygon.getLineIntersection(this);
-+┊  ┊70┊  }
- ┊64┊71┊};🚫↵
+@@ -69,4 +71,9 @@
+ ┊69┊71┊  getCircleIntersection(circle) {
+ ┊70┊72┊    return circle.getLineIntersection(this);
+ ┊71┊73┊  }
++┊  ┊74┊
++┊  ┊75┊  // line - polygon intersection method
++┊  ┊76┊  getPolygonIntersection(polygon) {
++┊  ┊77┊    return polygon.getLineIntersection(this);
++┊  ┊78┊  }
+ ┊72┊79┊};🚫↵
 ```
 [}]: #
 
@@ -1049,7 +1071,7 @@ And now we can add the `Snake` class:
 
 ##### Added resources/scripts/game/entities/snake.js
 ```diff
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,234 @@
 +┊   ┊  1┊Game.Entities.Snake = class Snake {
 +┊   ┊  2┊  // Represents a snake data-structure which will eventually appear on screen.
 +┊   ┊  3┊  // All the properties provided to the constructor are the initial values of
@@ -1065,8 +1087,8 @@ And now we can add the `Snake` class:
 +┊   ┊ 13┊    // A snake is made out of many geometry shapes
 +┊   ┊ 14┊    this.shapes = [];
 +┊   ┊ 15┊    // A snake starts with a line
-+┊   ┊ 16┊    this.currShape = new Engine.Geometry.Line(x, y, x, y);
-+┊   ┊ 17┊    this.shapes.push(this.currShape);
++┊   ┊ 16┊    this.currentShape = new Engine.Geometry.Line(x, y, x, y);
++┊   ┊ 17┊    this.shapes.push(this.currentShape);
 +┊   ┊ 18┊    // A score can be provided in case we want to reserve previous scores from
 +┊   ┊ 19┊    // recent matches
 +┊   ┊ 20┊    this.score = options.score || 0;
@@ -1091,183 +1113,199 @@ And now we can add the `Snake` class:
 +┊   ┊ 39┊      context.lineWidth = 3;
 +┊   ┊ 40┊      context.beginPath();
 +┊   ┊ 41┊
-+┊   ┊ 42┊      // Use a different drawing method for line and circle
-+┊   ┊ 43┊      if (shape instanceof Engine.Geometry.Line) {
-+┊   ┊ 44┊        context.moveTo(shape.x1, shape.y1);
-+┊   ┊ 45┊        context.lineTo(shape.x2, shape.y2);
-+┊   ┊ 46┊      }
-+┊   ┊ 47┊      else {
-+┊   ┊ 48┊        context.arc(shape.x, shape.y, shape.r, shape.rad1, shape.rad2);
-+┊   ┊ 49┊      }
-+┊   ┊ 50┊
-+┊   ┊ 51┊      context.stroke();
-+┊   ┊ 52┊      context.restore();
-+┊   ┊ 53┊    });
-+┊   ┊ 54┊  }
-+┊   ┊ 55┊
-+┊   ┊ 56┊  update(span, width, height) {
-+┊   ┊ 57┊    // Progress made based on elapsed time and velocity
-+┊   ┊ 58┊    let step = (this.v * span) / 1000;
-+┊   ┊ 59┊
-+┊   ┊ 60┊    this.updateShapes(step, width, height);
-+┊   ┊ 61┊    this.cycleThrough(step, width, height);
++┊   ┊ 42┊      // Each shape has its own unique drawing method
++┊   ┊ 43┊      shape.draw(context);
++┊   ┊ 44┊
++┊   ┊ 45┊      context.stroke();
++┊   ┊ 46┊      context.restore();
++┊   ┊ 47┊    });
++┊   ┊ 48┊  }
++┊   ┊ 49┊
++┊   ┊ 50┊  update(span, width, height) {
++┊   ┊ 51┊    // Progress made based on elapsed time and velocity
++┊   ┊ 52┊    let step = (this.v * span) / 1000;
++┊   ┊ 53┊
++┊   ┊ 54┊    this.updateShapes(step, width, height);
++┊   ┊ 55┊    this.cycleThrough(step, width, height);
++┊   ┊ 56┊  }
++┊   ┊ 57┊
++┊   ┊ 58┊  // Updates shapes array based on progress made
++┊   ┊ 59┊  updateShapes(step, width, height, options = {}) {
++┊   ┊ 60┊    this.updateCurrentShape(step, options);
++┊   ┊ 61┊    this.updateDirection(step, options);
 +┊   ┊ 62┊  }
 +┊   ┊ 63┊
-+┊   ┊ 64┊  // Updates shapes array based on progress made
-+┊   ┊ 65┊  updateShapes(step, width, height, options = {}) {
-+┊   ┊ 66┊    // Line update logic
-+┊   ┊ 67┊    if (this.currShape instanceof Engine.Geometry.Line) {
-+┊   ┊ 68┊      let lastX = options.lastX || this.x;
-+┊   ┊ 69┊      let lastY = options.lastY || this.y;
-+┊   ┊ 70┊      this.x = options.x || this.currShape.x2;
-+┊   ┊ 71┊      this.y = options.y || this.currShape.y2;
-+┊   ┊ 72┊      this.lastBit = new Engine.Geometry.Line(lastX, lastY, this.x, this.y);
-+┊   ┊ 73┊    }
-+┊   ┊ 74┊    // Circle update logic
-+┊   ┊ 75┊    else {
-+┊   ┊ 76┊      let lastX = options.lastX || this.currShape.x;
-+┊   ┊ 77┊      let lastY = options.lastY || this.currShape.y;
-+┊   ┊ 78┊      let lastR = options.lastR || this.currShape.r;
-+┊   ┊ 79┊
-+┊   ┊ 80┊      // Update logic for left rotation
-+┊   ┊ 81┊      if (this.direction == "left") {
-+┊   ┊ 82┊        let lastRad = this.rad + (0.5 * Math.PI);
-+┊   ┊ 83┊        let currShapePoint = this.currShape.getPoint(this.currShape.rad1);
-+┊   ┊ 84┊        this.x = options.x || currShapePoint.x;
-+┊   ┊ 85┊        this.y = options.y || currShapePoint.y;
-+┊   ┊ 86┊        this.rad = this.currShape.rad1 - (0.5 * Math.PI);
-+┊   ┊ 87┊        this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, this.currShape.rad1, lastRad);
-+┊   ┊ 88┊      }
-+┊   ┊ 89┊      // Update logic for right rotation
-+┊   ┊ 90┊      else {
-+┊   ┊ 91┊        let lastRad = this.rad - (0.5 * Math.PI);
-+┊   ┊ 92┊        let currShapePoint = this.currShape.getPoint(this.currShape.rad2);
-+┊   ┊ 93┊        this.x = options.x || currShapePoint.x;
-+┊   ┊ 94┊        this.y = options.y || currShapePoint.y;
-+┊   ┊ 95┊        this.rad = this.currShape.rad2 + (0.5 * Math.PI);
-+┊   ┊ 96┊        this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, lastRad, this.currShape.rad2);
-+┊   ┊ 97┊      }
-+┊   ┊ 98┊    }
-+┊   ┊ 99┊
-+┊   ┊100┊    // Update the direction based on pressed key
-+┊   ┊101┊    if (this.keyStates.get(this.leftKey))
-+┊   ┊102┊      var direction = "left";
-+┊   ┊103┊    else if (this.keyStates.get(this.rightKey))
-+┊   ┊104┊      var direction = "right";
-+┊   ┊105┊
-+┊   ┊106┊    // If there is no change direction, abort, unless we force it
-+┊   ┊107┊    if (direction != this.direction || options.force) {
-+┊   ┊108┊      this.direction = direction;
-+┊   ┊109┊
-+┊   ┊110┊      // This will push a new shape with new properties, based on the direction
-+┊   ┊111┊      switch (direction) {
-+┊   ┊112┊        case "left":
-+┊   ┊113┊          var angle = this.rad - (0.5 * Math.PI);
-+┊   ┊114┊          var rad = this.rad + (0.5 * Math.PI);
-+┊   ┊115┊          var x = this.x + (this.r * Math.cos(angle));
-+┊   ┊116┊          var y = this.y + (this.r * Math.sin(angle));
-+┊   ┊117┊          this.currShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
-+┊   ┊118┊          break;
-+┊   ┊119┊        case "right":
-+┊   ┊120┊          angle = this.rad + (0.5 * Math.PI);
-+┊   ┊121┊          rad = this.rad - (0.5 * Math.PI);
-+┊   ┊122┊          x = this.x + (this.r * Math.cos(angle));
-+┊   ┊123┊          y = this.y + (this.r * Math.sin(angle));
-+┊   ┊124┊          this.currShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
-+┊   ┊125┊          break;
-+┊   ┊126┊        default:
-+┊   ┊127┊          this.currShape = new Engine.Geometry.Line(this.x, this.y, this.x, this.y);
-+┊   ┊128┊      }
-+┊   ┊129┊
-+┊   ┊130┊      this.shapes.push(this.currShape);
-+┊   ┊131┊    }
-+┊   ┊132┊
-+┊   ┊133┊    // Extend the recent shape based on progress made
-+┊   ┊134┊    switch (direction) {
-+┊   ┊135┊      case "left":
-+┊   ┊136┊        this.currShape.rad1 -= step / this.r;
-+┊   ┊137┊        break;
-+┊   ┊138┊      case "right":
-+┊   ┊139┊        this.currShape.rad2 += step / this.r;
++┊   ┊ 64┊  // Updates current shape
++┊   ┊ 65┊  updateCurrentShape(step, options) {
++┊   ┊ 66┊    if (this.currentShape instanceof Engine.Geometry.Line)
++┊   ┊ 67┊      return this.updateCurrentLine(options);
++┊   ┊ 68┊    if (this.currentShape instanceof Engine.Geometry.Circle)
++┊   ┊ 69┊      return this.updateCurrentCircle(options);
++┊   ┊ 70┊  }
++┊   ┊ 71┊
++┊   ┊ 72┊  // Updates current shape in case it is a line
++┊   ┊ 73┊  updateCurrentLine(options) {
++┊   ┊ 74┊    let lastX = options.lastX || this.x;
++┊   ┊ 75┊    let lastY = options.lastY || this.y;
++┊   ┊ 76┊    this.x = options.x || this.currentShape.x2;
++┊   ┊ 77┊    this.y = options.y || this.currentShape.y2;
++┊   ┊ 78┊    this.lastBit = new Engine.Geometry.Line(lastX, lastY, this.x, this.y);
++┊   ┊ 79┊  }
++┊   ┊ 80┊
++┊   ┊ 81┊  // Updates current shape in case it is a circle
++┊   ┊ 82┊  updateCurrentCircle(options) {
++┊   ┊ 83┊    let lastX = options.lastX || this.currentShape.x;
++┊   ┊ 84┊    let lastY = options.lastY || this.currentShape.y;
++┊   ┊ 85┊    let lastR = options.lastR || this.currentShape.r;
++┊   ┊ 86┊
++┊   ┊ 87┊    // Update logic for left rotation
++┊   ┊ 88┊    if (this.direction == "left") {
++┊   ┊ 89┊      let lastRad = this.rad + (0.5 * Math.PI);
++┊   ┊ 90┊      let currentShapePoint = this.currentShape.getPoint(this.currentShape.rad1);
++┊   ┊ 91┊      this.x = options.x || currentShapePoint.x;
++┊   ┊ 92┊      this.y = options.y || currentShapePoint.y;
++┊   ┊ 93┊      this.rad = this.currentShape.rad1 - (0.5 * Math.PI);
++┊   ┊ 94┊      this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, this.currentShape.rad1, lastRad);
++┊   ┊ 95┊    }
++┊   ┊ 96┊    // Update logic for right rotation
++┊   ┊ 97┊    else {
++┊   ┊ 98┊      let lastRad = this.rad - (0.5 * Math.PI);
++┊   ┊ 99┊      let currentShapePoint = this.currentShape.getPoint(this.currentShape.rad2);
++┊   ┊100┊      this.x = options.x || currentShapePoint.x;
++┊   ┊101┊      this.y = options.y || currentShapePoint.y;
++┊   ┊102┊      this.rad = this.currentShape.rad2 + (0.5 * Math.PI);
++┊   ┊103┊      this.lastBit = new Engine.Geometry.Circle(lastX, lastY, lastR, lastRad, this.currentShape.rad2);
++┊   ┊104┊    }
++┊   ┊105┊  }
++┊   ┊106┊
++┊   ┊107┊  updateDirection(step, options) {
++┊   ┊108┊    // Update the direction based on pressed key
++┊   ┊109┊    if (this.keyStates.get(this.leftKey))
++┊   ┊110┊      var direction = "left";
++┊   ┊111┊    else if (this.keyStates.get(this.rightKey))
++┊   ┊112┊      var direction = "right";
++┊   ┊113┊
++┊   ┊114┊    this.changeDirection(step, direction, options);
++┊   ┊115┊    this.continueDirection(step, direction, options);
++┊   ┊116┊  }
++┊   ┊117┊
++┊   ┊118┊  // Change the recent shape type according to the given direction
++┊   ┊119┊  changeDirection(step, direction, options) {
++┊   ┊120┊    // If there is no change in direction, abort, unless we force it
++┊   ┊121┊    if (direction == this.direction && !options.force) return;
++┊   ┊122┊
++┊   ┊123┊    this.direction = direction;
++┊   ┊124┊
++┊   ┊125┊    // This will push a new shape with new properties, based on the direction
++┊   ┊126┊    switch (direction) {
++┊   ┊127┊      case "left":
++┊   ┊128┊        var angle = this.rad - (0.5 * Math.PI);
++┊   ┊129┊        var rad = this.rad + (0.5 * Math.PI);
++┊   ┊130┊        var x = this.x + (this.r * Math.cos(angle));
++┊   ┊131┊        var y = this.y + (this.r * Math.sin(angle));
++┊   ┊132┊        this.currentShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
++┊   ┊133┊        break;
++┊   ┊134┊      case "right":
++┊   ┊135┊        angle = this.rad + (0.5 * Math.PI);
++┊   ┊136┊        rad = this.rad - (0.5 * Math.PI);
++┊   ┊137┊        x = this.x + (this.r * Math.cos(angle));
++┊   ┊138┊        y = this.y + (this.r * Math.sin(angle));
++┊   ┊139┊        this.currentShape = new Engine.Geometry.Circle(x, y, this.r, rad, rad);
 +┊   ┊140┊        break;
 +┊   ┊141┊      default:
-+┊   ┊142┊        this.currShape.x2 += step * Math.cos(this.rad);
-+┊   ┊143┊        this.currShape.y2 += step * Math.sin(this.rad);
-+┊   ┊144┊    }
-+┊   ┊145┊  }
-+┊   ┊146┊
-+┊   ┊147┊  // Handles case where snake is out limits and we need to render it from
-+┊   ┊148┊  // the other side of the canvas
-+┊   ┊149┊  cycleThrough(step, width, height) {
-+┊   ┊150┊    let intersectionPoint = this.getCanvasIntersection(width, height);
-+┊   ┊151┊
-+┊   ┊152┊    if (!intersectionPoint) return;
-+┊   ┊153┊
-+┊   ┊154┊    intersectionPoint = intersectionPoint[0];
-+┊   ┊155┊
-+┊   ┊156┊    // Re-calculate position based on canvas bounds
-+┊   ┊157┊    if (intersectionPoint.x % width == 0)
-+┊   ┊158┊      this.x = (this.x - width).mod(width);
-+┊   ┊159┊    if (intersectionPoint.y % height == 0)
-+┊   ┊160┊      this.y = (this.y - height).mod(height);
-+┊   ┊161┊
-+┊   ┊162┊    // Update shapes again based on custom properties
-+┊   ┊163┊    this.updateShapes(step, width, height, {
-+┊   ┊164┊      force: true,
-+┊   ┊165┊      lastX: this.x,
-+┊   ┊166┊      lastY: this.y,
-+┊   ┊167┊      x: this.x,
-+┊   ┊168┊      y: this.y
-+┊   ┊169┊    });
-+┊   ┊170┊  }
++┊   ┊142┊        this.currentShape = new Engine.Geometry.Line(this.x, this.y, this.x, this.y);
++┊   ┊143┊    }
++┊   ┊144┊
++┊   ┊145┊    this.shapes.push(this.currentShape);
++┊   ┊146┊  }
++┊   ┊147┊
++┊   ┊148┊  // Extend the recent shape based on progress made
++┊   ┊149┊  continueDirection(step, direction) {
++┊   ┊150┊    switch (direction) {
++┊   ┊151┊      case "left":
++┊   ┊152┊        this.currentShape.rad1 -= step / this.r;
++┊   ┊153┊        break;
++┊   ┊154┊      case "right":
++┊   ┊155┊        this.currentShape.rad2 += step / this.r;
++┊   ┊156┊        break;
++┊   ┊157┊      default:
++┊   ┊158┊        this.currentShape.x2 += step * Math.cos(this.rad);
++┊   ┊159┊        this.currentShape.y2 += step * Math.sin(this.rad);
++┊   ┊160┊    }
++┊   ┊161┊  }
++┊   ┊162┊
++┊   ┊163┊  // Handles case where snake is out limits and we need to render it from
++┊   ┊164┊  // the other side of the canvas
++┊   ┊165┊  cycleThrough(step, width, height) {
++┊   ┊166┊    let intersectionPoint = this.getCanvasIntersection(width, height);
++┊   ┊167┊
++┊   ┊168┊    if (!intersectionPoint) return;
++┊   ┊169┊
++┊   ┊170┊    intersectionPoint = intersectionPoint[0];
 +┊   ┊171┊
-+┊   ┊172┊  // Gets intersection points between last bit and own shapes
-+┊   ┊173┊  getSelfIntersection() {
-+┊   ┊174┊    if (this.currShape instanceof Engine.Geometry.Circle &&
-+┊   ┊175┊       Math.abs(this.currShape.rad1 - this.currShape.rad2) >= 2 * Math.PI) {
-+┊   ┊176┊      if (this.direction == "left")
-+┊   ┊177┊        var rad = this.currShape.rad1;
-+┊   ┊178┊      else
-+┊   ┊179┊        var rad = this.currShape.rad2;
-+┊   ┊180┊
-+┊   ┊181┊      return this.currShape.getPoint(rad);
-+┊   ┊182┊    }
-+┊   ┊183┊
-+┊   ┊184┊    let result;
-+┊   ┊185┊
-+┊   ┊186┊    this.shapes.slice(0, -2).some(shape =>
-+┊   ┊187┊      result = this.lastBit.getIntersection(shape)
-+┊   ┊188┊    );
-+┊   ┊189┊
-+┊   ┊190┊    return result;
-+┊   ┊191┊  }
-+┊   ┊192┊
-+┊   ┊193┊  // Returns intersection points between snakes
-+┊   ┊194┊  getSnakeIntersection(snake) {
-+┊   ┊195┊    let result;
++┊   ┊172┊    // Re-calculate position based on canvas bounds
++┊   ┊173┊    if (intersectionPoint.x % width == 0)
++┊   ┊174┊      this.x = Utils.mod(this.x - width, width);
++┊   ┊175┊    if (intersectionPoint.y % height == 0)
++┊   ┊176┊      this.y = Utils.mod(this.y - height, height);
++┊   ┊177┊
++┊   ┊178┊    // Update shapes again based on custom properties
++┊   ┊179┊    this.updateShapes(step, width, height, {
++┊   ┊180┊      force: true,
++┊   ┊181┊      lastX: this.x,
++┊   ┊182┊      lastY: this.y,
++┊   ┊183┊      x: this.x,
++┊   ┊184┊      y: this.y
++┊   ┊185┊    });
++┊   ┊186┊  }
++┊   ┊187┊
++┊   ┊188┊  // Gets intersection points between last bit and own shapes
++┊   ┊189┊  getSelfIntersection() {
++┊   ┊190┊    if (this.currentShape instanceof Engine.Geometry.Circle &&
++┊   ┊191┊       Math.abs(this.currentShape.rad1 - this.currentShape.rad2) >= 2 * Math.PI) {
++┊   ┊192┊      if (this.direction == "left")
++┊   ┊193┊        var rad = this.currentShape.rad1;
++┊   ┊194┊      else
++┊   ┊195┊        var rad = this.currentShape.rad2;
 +┊   ┊196┊
-+┊   ┊197┊    snake.shapes.some(shape =>
-+┊   ┊198┊      // Only last bit is relevant, if we reached this point it means that
-+┊   ┊199┊      // previous intersection will definitely fail
-+┊   ┊200┊      result = this.lastBit.getIntersection(shape)
-+┊   ┊201┊    );
-+┊   ┊202┊
-+┊   ┊203┊    return result;
-+┊   ┊204┊  }
++┊   ┊197┊      return this.currentShape.getPoint(rad);
++┊   ┊198┊    }
++┊   ┊199┊
++┊   ┊200┊    let result;
++┊   ┊201┊
++┊   ┊202┊    this.shapes.slice(0, -2).some(shape =>
++┊   ┊203┊      result = this.lastBit.getIntersection(shape)
++┊   ┊204┊    );
 +┊   ┊205┊
-+┊   ┊206┊  // Returns intersection points between snake and canvas
-+┊   ┊207┊  getCanvasIntersection(width, height) {
-+┊   ┊208┊    // Canvas polygon
-+┊   ┊209┊    let canvasPolygon = new Engine.Geometry.Polygon(
-+┊   ┊210┊      [0, 0, width, 0],
-+┊   ┊211┊      [width, 0, width, height],
-+┊   ┊212┊      [width, height, 0, height],
-+┊   ┊213┊      [0, height, 0, 0]
-+┊   ┊214┊    );
-+┊   ┊215┊
-+┊   ┊216┊    return canvasPolygon.getIntersection(this.lastBit);
-+┊   ┊217┊  }
-+┊   ┊218┊};🚫↵
++┊   ┊206┊    return result;
++┊   ┊207┊  }
++┊   ┊208┊
++┊   ┊209┊  // Returns intersection points between snakes
++┊   ┊210┊  getSnakeIntersection(snake) {
++┊   ┊211┊    let result;
++┊   ┊212┊
++┊   ┊213┊    snake.shapes.some(shape =>
++┊   ┊214┊      // Only last bit is relevant, if we reached this point it means that
++┊   ┊215┊      // previous intersection will definitely fail
++┊   ┊216┊      result = this.lastBit.getIntersection(shape)
++┊   ┊217┊    );
++┊   ┊218┊
++┊   ┊219┊    return result;
++┊   ┊220┊  }
++┊   ┊221┊
++┊   ┊222┊  // Returns intersection points between snake and canvas
++┊   ┊223┊  getCanvasIntersection(width, height) {
++┊   ┊224┊    // Canvas polygon
++┊   ┊225┊    let canvasPolygon = new Engine.Geometry.Polygon(
++┊   ┊226┊      [0, 0, width, 0],
++┊   ┊227┊      [width, 0, width, height],
++┊   ┊228┊      [width, height, 0, height],
++┊   ┊229┊      [0, height, 0, 0]
++┊   ┊230┊    );
++┊   ┊231┊
++┊   ┊232┊    return canvasPolygon.getIntersection(this.lastBit);
++┊   ┊233┊  }
++┊   ┊234┊};🚫↵
 ```
 
 ##### Changed views/game.html

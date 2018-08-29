@@ -43,7 +43,7 @@ And then we will implement the initial main menu screen:
 +┊  ┊24┊    ]);
 +┊  ┊25┊
 +┊  ┊26┊    // Play it repeatedly, back and forth
-+┊  ┊27┊    this.instructionsAnim.repMode = "full";
++┊  ┊27┊    this.instructionsAnim.repetitionMode = "full";
 +┊  ┊28┊    this.instructionsAnim.play();
 +┊  ┊29┊  }
 +┊  ┊30┊

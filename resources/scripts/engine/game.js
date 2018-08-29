@@ -1,7 +1,7 @@
 Engine.Game = class Game {
-  // Frames rendered per second
+  // The frequency of which each frame will be drawn in milliseconds
   get fps() {
-    return 60;
+    return 1000 / 60;
   }
 
   // Game's run speed.
@@ -10,9 +10,8 @@ Engine.Game = class Game {
     return 1;
   }
 
-  constructor(canvas, debugging) {
+  constructor(canvas) {
     this.canvas = canvas;
-    this.debugging = debugging;
     this.lastUpdate = this.creation = new Date().getTime();
 
     // Canvas dimensions must be set programmatically, otherwise you might encounter some
@@ -41,27 +40,13 @@ Engine.Game = class Game {
   }
 
   draw() {
-    // If debugging, don't use double buffer so we can see rendering in real time
-    if (this.debugging) {
-      this.context.restore();
-      this.context.fillStyle = "black";
-      this.context.save();
-      this.context.beginPath();
-      this.context.rect(0, 0, this.canvas.width, this.canvas.height);
-      this.context.fill();
-      this.drawScreen(this.context);
-    }
-    // If not debugging, use double buffer to prevent flickering
-    else {
-      this.bufferedContext.restore();
-      this.bufferedContext.fillStyle = "black";
-      this.bufferedContext.save();
-      this.bufferedContext.beginPath();
-      this.bufferedContext.rect(0, 0, this.canvas.width, this.canvas.height);
-      this.bufferedContext.fill();
-      this.drawScreen(this.bufferedContext);
-      this.context.drawImage(this.bufferedCanvas, 0, 0);
-    }
+    this.context.restore();
+    this.context.fillStyle = "black";
+    this.context.save();
+    this.context.beginPath();
+    this.context.rect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.fill();
+    this.drawScreen(this.context);
   }
 
   drawScreen(context) {

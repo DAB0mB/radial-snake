@@ -131,119 +131,106 @@ A game loop can wear many forms, but the concept is gonna be the same, plus-minu
 
 ##### Added resources/scripts/engine/game.js
 ```diff
-@@ -0,0 +1,112 @@
-+┊   ┊  1┊Engine.Game = class Game {
-+┊   ┊  2┊  // Frames rendered per second
-+┊   ┊  3┊  get fps() {
-+┊   ┊  4┊    return 60;
-+┊   ┊  5┊  }
-+┊   ┊  6┊
-+┊   ┊  7┊  // Game's run speed.
-+┊   ┊  8┊  // A lower value will make it run slower and a higher value will make it run faster
-+┊   ┊  9┊  get speed() {
-+┊   ┊ 10┊    return 1;
-+┊   ┊ 11┊  }
-+┊   ┊ 12┊
-+┊   ┊ 13┊  constructor(canvas, debugging) {
-+┊   ┊ 14┊    this.canvas = canvas;
-+┊   ┊ 15┊    this.debugging = debugging;
-+┊   ┊ 16┊    this.lastUpdate = this.creation = new Date().getTime();
-+┊   ┊ 17┊
-+┊   ┊ 18┊    // Canvas dimensions must be set programmatically otherwise you might encounter some
-+┊   ┊ 19┊    // unexpected behaviors
-+┊   ┊ 20┊    canvas.width = 1280;
-+┊   ┊ 21┊    canvas.height = 720;
-+┊   ┊ 22┊    // Canvas will be focused once game page is loaded so all events will automatically
-+┊   ┊ 23┊    // be captured by it
-+┊   ┊ 24┊    canvas.focus();
-+┊   ┊ 25┊
-+┊   ┊ 26┊    // We want to focus on the canvas once we press on it
-+┊   ┊ 27┊    canvas.addEventListener("mousedown", canvas.focus.bind(canvas), false);
-+┊   ┊ 28┊
-+┊   ┊ 29┊    this.assets = {};
-+┊   ┊ 30┊    this.events = new Map();
-+┊   ┊ 31┊    this.context = canvas.getContext("2d");
-+┊   ┊ 32┊    this.bufferedCanvas = document.createElement("canvas");
-+┊   ┊ 33┊    this.bufferedContext = this.bufferedCanvas.getContext("2d");
-+┊   ┊ 34┊    this.bufferedCanvas.width = canvas.width;
-+┊   ┊ 35┊    this.bufferedCanvas.height = canvas.height;
-+┊   ┊ 36┊  }
-+┊   ┊ 37┊
-+┊   ┊ 38┊  draw() {
-+┊   ┊ 39┊    // If debugging, don't use double buffer so we can see rendering in real time
-+┊   ┊ 40┊    if (this.debugging) {
-+┊   ┊ 41┊      this.context.restore();
-+┊   ┊ 42┊      this.context.fillStyle = "black";
-+┊   ┊ 43┊      this.context.save();
-+┊   ┊ 44┊      this.context.beginPath();
-+┊   ┊ 45┊      this.context.rect(0, 0, this.canvas.width, this.canvas.height);
-+┊   ┊ 46┊      this.context.fill();
-+┊   ┊ 47┊    }
-+┊   ┊ 48┊    // If not debugging, use double buffer to prevent flickering
-+┊   ┊ 49┊    else {
-+┊   ┊ 50┊      this.bufferedContext.restore();
-+┊   ┊ 51┊      this.bufferedContext.fillStyle = "black";
-+┊   ┊ 52┊      this.bufferedContext.save();
-+┊   ┊ 53┊      this.bufferedContext.beginPath();
-+┊   ┊ 54┊      this.bufferedContext.rect(0, 0, this.canvas.width, this.canvas.height);
-+┊   ┊ 55┊      this.bufferedContext.fill();
-+┊   ┊ 56┊      this.context.drawImage(this.bufferedCanvas, 0, 0);
-+┊   ┊ 57┊    }
-+┊   ┊ 58┊  }
-+┊   ┊ 59┊
-+┊   ┊ 60┊  update() {
-+┊   ┊ 61┊    // Calculate the time elapsed
-+┊   ┊ 62┊    let lastUpdate = this.lastUpdate;
-+┊   ┊ 63┊    let currUpdate = this.lastUpdate = new Date().getTime();
-+┊   ┊ 64┊    let span = currUpdate - lastUpdate;
-+┊   ┊ 65┊    this.updateScreen(span / this.speed);
-+┊   ┊ 66┊  }
-+┊   ┊ 67┊
-+┊   ┊ 68┊  // The main loop of the game
-+┊   ┊ 69┊  loop() {
-+┊   ┊ 70┊    // If paused, don't run loop. The canvas will remain as is
-+┊   ┊ 71┊    if (!this.playing) return;
-+┊   ┊ 72┊
-+┊   ┊ 73┊    setTimeout(() => {
-+┊   ┊ 74┊      this.draw();
-+┊   ┊ 75┊      this.update();
-+┊   ┊ 76┊      this.loop();
-+┊   ┊ 77┊    }, this.fps);
-+┊   ┊ 78┊  }
-+┊   ┊ 79┊
-+┊   ┊ 80┊  play() {
-+┊   ┊ 81┊    this.playing = true;
-+┊   ┊ 82┊    this.loop();
-+┊   ┊ 83┊  }
-+┊   ┊ 84┊
-+┊   ┊ 85┊  pause() {
-+┊   ┊ 86┊    this.playing = false;
-+┊   ┊ 87┊  }
-+┊   ┊ 88┊
-+┊   ┊ 89┊  // Defines global assets
-+┊   ┊ 90┊  extendAssets(assets) {
-+┊   ┊ 91┊    _.extend(this.assets, assets);
-+┊   ┊ 92┊  }
-+┊   ┊ 93┊
-+┊   ┊ 94┊  // Disposes global assets
-+┊   ┊ 95┊  clearAssets() {
-+┊   ┊ 96┊    this.assets = {};
-+┊   ┊ 97┊  }
-+┊   ┊ 98┊
-+┊   ┊ 99┊  // Adds event listener for game canvas
-+┊   ┊100┊  addEventListener(type, listener, target) {
-+┊   ┊101┊    let boundListener = listener.bind(target);
-+┊   ┊102┊    this.events.set(listener, boundListener);
-+┊   ┊103┊    this.canvas.addEventListener(type, boundListener, false);
-+┊   ┊104┊  }
-+┊   ┊105┊
-+┊   ┊106┊  // Removes event listener from game canvas
-+┊   ┊107┊  removeEventListener(type, listener) {
-+┊   ┊108┊    let boundListener = this.events.get(listener);
-+┊   ┊109┊    this.events.delete(listener);
-+┊   ┊110┊    this.canvas.removeEventListener(type, boundListener, false);
-+┊   ┊111┊  }
-+┊   ┊112┊};🚫↵
+@@ -0,0 +1,99 @@
++┊  ┊ 1┊Engine.Game = class Game {
++┊  ┊ 2┊  // The frequency of which each frame will be drawn in milliseconds
++┊  ┊ 3┊  get fps() {
++┊  ┊ 4┊    return 1000 / 60;
++┊  ┊ 5┊  }
++┊  ┊ 6┊
++┊  ┊ 7┊  // Game's run speed.
++┊  ┊ 8┊  // A lower value will make it run slower and a higher value will make it run faster
++┊  ┊ 9┊  get speed() {
++┊  ┊10┊    return 1;
++┊  ┊11┊  }
++┊  ┊12┊
++┊  ┊13┊  constructor(canvas) {
++┊  ┊14┊    this.canvas = canvas;
++┊  ┊15┊    this.lastUpdate = this.creation = new Date().getTime();
++┊  ┊16┊
++┊  ┊17┊    // Canvas dimensions must be set programmatically otherwise you might encounter some
++┊  ┊18┊    // unexpected behaviors
++┊  ┊19┊    canvas.width = 1280;
++┊  ┊20┊    canvas.height = 720;
++┊  ┊21┊    // Canvas will be focused once game page is loaded so all events will automatically
++┊  ┊22┊    // be captured by it
++┊  ┊23┊    canvas.focus();
++┊  ┊24┊
++┊  ┊25┊    // We want to focus on the canvas once we press on it
++┊  ┊26┊    canvas.addEventListener("mousedown", canvas.focus.bind(canvas), false);
++┊  ┊27┊
++┊  ┊28┊    this.assets = {};
++┊  ┊29┊    this.events = new Map();
++┊  ┊30┊    this.context = canvas.getContext("2d");
++┊  ┊31┊    this.bufferedCanvas = document.createElement("canvas");
++┊  ┊32┊    this.bufferedContext = this.bufferedCanvas.getContext("2d");
++┊  ┊33┊    this.bufferedCanvas.width = canvas.width;
++┊  ┊34┊    this.bufferedCanvas.height = canvas.height;
++┊  ┊35┊  }
++┊  ┊36┊
++┊  ┊37┊  draw() {
++┊  ┊38┊    // Draw a black screen by default
++┊  ┊39┊    this.context.restore();
++┊  ┊40┊    this.context.fillStyle = "black";
++┊  ┊41┊    this.context.save();
++┊  ┊42┊    this.context.beginPath();
++┊  ┊43┊    this.context.rect(0, 0, this.canvas.width, this.canvas.height);
++┊  ┊44┊    this.context.fill();
++┊  ┊45┊  }
++┊  ┊46┊
++┊  ┊47┊  update() {
++┊  ┊48┊    // Calculate the time elapsed
++┊  ┊49┊    let lastUpdate = this.lastUpdate;
++┊  ┊50┊    let currUpdate = this.lastUpdate = new Date().getTime();
++┊  ┊51┊    let span = currUpdate - lastUpdate;
++┊  ┊52┊    this.updateScreen(span / this.speed);
++┊  ┊53┊  }
++┊  ┊54┊
++┊  ┊55┊  // The main loop of the game
++┊  ┊56┊  loop() {
++┊  ┊57┊    // If paused, don't run loop. The canvas will remain as is
++┊  ┊58┊    if (!this.playing) return;
++┊  ┊59┊
++┊  ┊60┊    setTimeout(() => {
++┊  ┊61┊      this.draw();
++┊  ┊62┊      this.update();
++┊  ┊63┊      this.loop();
++┊  ┊64┊    }, this.fps);
++┊  ┊65┊  }
++┊  ┊66┊
++┊  ┊67┊  play() {
++┊  ┊68┊    this.playing = true;
++┊  ┊69┊    this.loop();
++┊  ┊70┊  }
++┊  ┊71┊
++┊  ┊72┊  pause() {
++┊  ┊73┊    this.playing = false;
++┊  ┊74┊  }
++┊  ┊75┊
++┊  ┊76┊  // Defines global assets
++┊  ┊77┊  extendAssets(assets) {
++┊  ┊78┊    _.extend(this.assets, assets);
++┊  ┊79┊  }
++┊  ┊80┊
++┊  ┊81┊  // Disposes global assets
++┊  ┊82┊  clearAssets() {
++┊  ┊83┊    this.assets = {};
++┊  ┊84┊  }
++┊  ┊85┊
++┊  ┊86┊  // Adds event listener for game canvas
++┊  ┊87┊  addEventListener(type, listener, target) {
++┊  ┊88┊    let boundListener = listener.bind(target);
++┊  ┊89┊    this.events.set(listener, boundListener);
++┊  ┊90┊    this.canvas.addEventListener(type, boundListener, false);
++┊  ┊91┊  }
++┊  ┊92┊
++┊  ┊93┊  // Removes event listener from game canvas
++┊  ┊94┊  removeEventListener(type, listener) {
++┊  ┊95┊    let boundListener = this.events.get(listener);
++┊  ┊96┊    this.events.delete(listener);
++┊  ┊97┊    this.canvas.removeEventListener(type, boundListener, false);
++┊  ┊98┊  }
++┊  ┊99┊};🚫↵
 ```
 
 ##### Changed views/game.html
@@ -259,7 +246,7 @@ A game loop can wear many forms, but the concept is gonna be the same, plus-minu
 ```
 [}]: #
 
-The only thing it's doing right now is only drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw some custom stuff. I just want to point out that in the `draw` method I used a very handy technique called [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering), where I first draw everything on a virtual canvas which is not visible to us, and once it's finished, I the result on the main canvas. It behaves the same way React's [virtual DOM](https://www.npmjs.com/package/react-dom) behaves like, and it will prevent our game from stuttering. To start running the game, we first need to wait for the DOM content to initialize, and once its ready we gonna create a new game instance and call the `play` method:
+The only thing it's doing right now is only drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw stuff of our own. I want to point out that there is no need to implement a [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering) (A method similar to React's [virtual DOM](https://www.npmjs.com/package/react-dom)) when it comes to `HTMLCanvas` elements, since `HTML5` already does that for us. To start running the game, we first need to wait for the DOM content to initialize, and once it's ready we gonna create a new game instance and call the `play` method:
 
 [{]: <helper> (diff_step 2.6)
 #### Step 2.6: Create game entry point
@@ -337,54 +324,54 @@ Now that we have the key state manager, we will initialize a new instance as par
 
 ##### Changed resources/scripts/engine/game.js
 ```diff
-@@ -15,7 +15,7 @@
- ┊15┊15┊    this.debugging = debugging;
- ┊16┊16┊    this.lastUpdate = this.creation = new Date().getTime();
- ┊17┊17┊
--┊18┊  ┊    // Canvas dimensions must be set programmatically otherwise you might encounter some
-+┊  ┊18┊    // Canvas dimensions must be set programmatically, otherwise you might encounter some
- ┊19┊19┊    // unexpected behaviors
- ┊20┊20┊    canvas.width = 1280;
- ┊21┊21┊    canvas.height = 720;
+@@ -14,7 +14,7 @@
+ ┊14┊14┊    this.canvas = canvas;
+ ┊15┊15┊    this.lastUpdate = this.creation = new Date().getTime();
+ ┊16┊16┊
+-┊17┊  ┊    // Canvas dimensions must be set programmatically otherwise you might encounter some
++┊  ┊17┊    // Canvas dimensions must be set programmatically, otherwise you might encounter some
+ ┊18┊18┊    // unexpected behaviors
+ ┊19┊19┊    canvas.width = 1280;
+ ┊20┊20┊    canvas.height = 720;
 ```
 ```diff
-@@ -25,9 +25,13 @@
- ┊25┊25┊
- ┊26┊26┊    // We want to focus on the canvas once we press on it
- ┊27┊27┊    canvas.addEventListener("mousedown", canvas.focus.bind(canvas), false);
-+┊  ┊28┊    // Key flags will be registered by the "KeyStates" instance
-+┊  ┊29┊    canvas.addEventListener("keydown", onKeyDown.bind(this), false);
-+┊  ┊30┊    canvas.addEventListener("keyup", onKeyUp.bind(this), false);
- ┊28┊31┊
- ┊29┊32┊    this.assets = {};
- ┊30┊33┊    this.events = new Map();
-+┊  ┊34┊    this.keyStates = new Engine.KeyStates();
- ┊31┊35┊    this.context = canvas.getContext("2d");
- ┊32┊36┊    this.bufferedCanvas = document.createElement("canvas");
- ┊33┊37┊    this.bufferedContext = this.bufferedCanvas.getContext("2d");
+@@ -24,9 +24,13 @@
+ ┊24┊24┊
+ ┊25┊25┊    // We want to focus on the canvas once we press on it
+ ┊26┊26┊    canvas.addEventListener("mousedown", canvas.focus.bind(canvas), false);
++┊  ┊27┊    // Key flags will be registered by the "KeyStates" instance
++┊  ┊28┊    canvas.addEventListener("keydown", onKeyDown.bind(this), false);
++┊  ┊29┊    canvas.addEventListener("keyup", onKeyUp.bind(this), false);
+ ┊27┊30┊
+ ┊28┊31┊    this.assets = {};
+ ┊29┊32┊    this.events = new Map();
++┊  ┊33┊    this.keyStates = new Engine.KeyStates();
+ ┊30┊34┊    this.context = canvas.getContext("2d");
+ ┊31┊35┊    this.bufferedCanvas = document.createElement("canvas");
+ ┊32┊36┊    this.bufferedContext = this.bufferedCanvas.getContext("2d");
 ```
 ```diff
-@@ -109,4 +113,19 @@
- ┊109┊113┊    this.events.delete(listener);
- ┊110┊114┊    this.canvas.removeEventListener(type, boundListener, false);
- ┊111┊115┊  }
--┊112┊   ┊};🚫↵
-+┊   ┊116┊};
-+┊   ┊117┊
-+┊   ┊118┊function onKeyDown(e) {
-+┊   ┊119┊  // Once we're focused on the canvas, we want nothing else to happen
-+┊   ┊120┊  // besides events the game is listening to. For example, when we press
-+┊   ┊121┊  // the arrow keys, this will prevent the screen from scrolling
-+┊   ┊122┊  e.preventDefault();
-+┊   ┊123┊  // Register key press
-+┊   ┊124┊  this.keyStates.add(e.keyCode);
-+┊   ┊125┊}
-+┊   ┊126┊
-+┊   ┊127┊function onKeyUp(e) {
-+┊   ┊128┊  e.preventDefault();
-+┊   ┊129┊  // Register key release
-+┊   ┊130┊  this.keyStates.remove(e.keyCode);
-+┊   ┊131┊}
+@@ -96,4 +100,19 @@
+ ┊ 96┊100┊    this.events.delete(listener);
+ ┊ 97┊101┊    this.canvas.removeEventListener(type, boundListener, false);
+ ┊ 98┊102┊  }
+-┊ 99┊   ┊};🚫↵
++┊   ┊103┊};
++┊   ┊104┊
++┊   ┊105┊function onKeyDown(e) {
++┊   ┊106┊  // Once we're focused on the canvas, we want nothing else to happen
++┊   ┊107┊  // besides events the game is listening to. For example, when we press
++┊   ┊108┊  // the arrow keys, this will prevent the screen from scrolling
++┊   ┊109┊  e.preventDefault();
++┊   ┊110┊  // Register key press
++┊   ┊111┊  this.keyStates.add(e.keyCode);
++┊   ┊112┊}
++┊   ┊113┊
++┊   ┊114┊function onKeyUp(e) {
++┊   ┊115┊  e.preventDefault();
++┊   ┊116┊  // Register key release
++┊   ┊117┊  this.keyStates.remove(e.keyCode);
++┊   ┊118┊}
 ```
 [}]: #
 
@@ -574,60 +561,53 @@ Now that we have the `screen` class available for us, let's apply it to the main
 
 ##### Changed resources/scripts/engine/game.js
 ```diff
-@@ -31,6 +31,7 @@
- ┊31┊31┊
- ┊32┊32┊    this.assets = {};
- ┊33┊33┊    this.events = new Map();
-+┊  ┊34┊    this.screen = new Engine.Screen(this);
- ┊34┊35┊    this.keyStates = new Engine.KeyStates();
- ┊35┊36┊    this.context = canvas.getContext("2d");
- ┊36┊37┊    this.bufferedCanvas = document.createElement("canvas");
+@@ -30,6 +30,7 @@
+ ┊30┊30┊
+ ┊31┊31┊    this.assets = {};
+ ┊32┊32┊    this.events = new Map();
++┊  ┊33┊    this.screen = new Engine.Screen(this);
+ ┊33┊34┊    this.keyStates = new Engine.KeyStates();
+ ┊34┊35┊    this.context = canvas.getContext("2d");
+ ┊35┊36┊    this.bufferedCanvas = document.createElement("canvas");
 ```
 ```diff
-@@ -48,6 +49,7 @@
- ┊48┊49┊      this.context.beginPath();
- ┊49┊50┊      this.context.rect(0, 0, this.canvas.width, this.canvas.height);
- ┊50┊51┊      this.context.fill();
-+┊  ┊52┊      this.drawScreen(this.context);
- ┊51┊53┊    }
- ┊52┊54┊    // If not debugging, use double buffer to prevent flickering
- ┊53┊55┊    else {
+@@ -39,13 +40,19 @@
+ ┊39┊40┊  }
+ ┊40┊41┊
+ ┊41┊42┊  draw() {
+-┊42┊  ┊    // Draw a black screen by default
+ ┊43┊43┊    this.context.restore();
+ ┊44┊44┊    this.context.fillStyle = "black";
+ ┊45┊45┊    this.context.save();
+ ┊46┊46┊    this.context.beginPath();
+ ┊47┊47┊    this.context.rect(0, 0, this.canvas.width, this.canvas.height);
+ ┊48┊48┊    this.context.fill();
++┊  ┊49┊    this.drawScreen(this.context);
++┊  ┊50┊  }
++┊  ┊51┊
++┊  ┊52┊  drawScreen(context) {
++┊  ┊53┊    // If screen's assets are not yet loaded, don't draw it
++┊  ┊54┊    if (this.screen.loading) return;
++┊  ┊55┊    if (this.screen.draw) this.screen.draw(context);
+ ┊49┊56┊  }
+ ┊50┊57┊
+ ┊51┊58┊  update() {
 ```
 ```diff
-@@ -57,10 +59,17 @@
- ┊57┊59┊      this.bufferedContext.beginPath();
- ┊58┊60┊      this.bufferedContext.rect(0, 0, this.canvas.width, this.canvas.height);
- ┊59┊61┊      this.bufferedContext.fill();
-+┊  ┊62┊      this.drawScreen(this.bufferedContext);
- ┊60┊63┊      this.context.drawImage(this.bufferedCanvas, 0, 0);
- ┊61┊64┊    }
- ┊62┊65┊  }
- ┊63┊66┊
-+┊  ┊67┊  drawScreen(context) {
-+┊  ┊68┊    // If screen's assets are not yet loaded, don't draw it
+@@ -56,6 +63,13 @@
+ ┊56┊63┊    this.updateScreen(span / this.speed);
+ ┊57┊64┊  }
+ ┊58┊65┊
++┊  ┊66┊  updateScreen(span) {
++┊  ┊67┊    this.screen.age += span;
++┊  ┊68┊    // If screen's assets are not yet loaded, don't update it
 +┊  ┊69┊    if (this.screen.loading) return;
-+┊  ┊70┊    if (this.screen.draw) this.screen.draw(context);
++┊  ┊70┊    if (this.screen.update) this.screen.update(span);
 +┊  ┊71┊  }
 +┊  ┊72┊
- ┊64┊73┊  update() {
- ┊65┊74┊    // Calculate the time elapsed
- ┊66┊75┊    let lastUpdate = this.lastUpdate;
-```
-```diff
-@@ -69,6 +78,13 @@
- ┊69┊78┊    this.updateScreen(span / this.speed);
- ┊70┊79┊  }
- ┊71┊80┊
-+┊  ┊81┊  updateScreen(span) {
-+┊  ┊82┊    this.screen.age += span;
-+┊  ┊83┊    // If screen's assets are not yet loaded, don't update it
-+┊  ┊84┊    if (this.screen.loading) return;
-+┊  ┊85┊    if (this.screen.update) this.screen.update(span);
-+┊  ┊86┊  }
-+┊  ┊87┊
- ┊72┊88┊  // The main loop of the game
- ┊73┊89┊  loop() {
- ┊74┊90┊    // If paused, don't run loop. The canvas will remain as is
+ ┊59┊73┊  // The main loop of the game
+ ┊60┊74┊  loop() {
+ ┊61┊75┊    // If paused, don't run loop. The canvas will remain as is
 ```
 [}]: #
 
@@ -675,65 +655,65 @@ Now that we have the `assets loader` we can add the ability to change a screen. 
 
 ##### Changed resources/scripts/engine/game.js
 ```diff
-@@ -106,6 +106,58 @@
- ┊106┊106┊    this.playing = false;
- ┊107┊107┊  }
- ┊108┊108┊
-+┊   ┊109┊  changeScreen(Screen, ...screenArgs) {
-+┊   ┊110┊    // If there is a screen defined, dispose it first
-+┊   ┊111┊    if (this.screen) {
-+┊   ┊112┊      this.unloadScreen();
-+┊   ┊113┊      this.screen.disposeEventListeners();
-+┊   ┊114┊    }
-+┊   ┊115┊
-+┊   ┊116┊    this.screen = new Screen(this, ...screenArgs);
-+┊   ┊117┊
-+┊   ┊118┊    // Load screen assets
-+┊   ┊119┊    this.loadScreen(() => {
-+┊   ┊120┊      // Once assets are loaded, initialize event listeners
-+┊   ┊121┊      this.screen.initEventListeners();
-+┊   ┊122┊      // The "initialize" method is exactly the same as the constructor, only it runs
-+┊   ┊123┊      // once assets are available and event listeners are registered
-+┊   ┊124┊      this.screen.initialize(this, ...screenArgs);
-+┊   ┊125┊    });
-+┊   ┊126┊  }
+@@ -91,6 +91,58 @@
+ ┊ 91┊ 91┊    this.playing = false;
+ ┊ 92┊ 92┊  }
+ ┊ 93┊ 93┊
++┊   ┊ 94┊  changeScreen(Screen, ...screenArgs) {
++┊   ┊ 95┊    // If there is a screen defined, dispose it first
++┊   ┊ 96┊    if (this.screen) {
++┊   ┊ 97┊      this.unloadScreen();
++┊   ┊ 98┊      this.screen.disposeEventListeners();
++┊   ┊ 99┊    }
++┊   ┊100┊
++┊   ┊101┊    this.screen = new Screen(this, ...screenArgs);
++┊   ┊102┊
++┊   ┊103┊    // Load screen assets
++┊   ┊104┊    this.loadScreen(() => {
++┊   ┊105┊      // Once assets are loaded, initialize event listeners
++┊   ┊106┊      this.screen.initEventListeners();
++┊   ┊107┊      // The "initialize" method is exactly the same as the constructor, only it runs
++┊   ┊108┊      // once assets are available and event listeners are registered
++┊   ┊109┊      this.screen.initialize(this, ...screenArgs);
++┊   ┊110┊    });
++┊   ┊111┊  }
++┊   ┊112┊
++┊   ┊113┊  // Loads screen assets and invokes callback once loading is finished
++┊   ┊114┊  loadScreen(callback = _.noop) {
++┊   ┊115┊    if (!this.screen.load) return callback();
++┊   ┊116┊
++┊   ┊117┊    this.screen.loading = true;
++┊   ┊118┊    // The number of assets to load
++┊   ┊119┊    let loadsize = 0;
++┊   ┊120┊
++┊   ┊121┊    // We use the "after" method because we want the following callback to be invoked
++┊   ┊122┊    // only once all assets are loaded
++┊   ┊123┊    let onload = _.after(loadsize, () => {
++┊   ┊124┊      delete this.screen.loading;
++┊   ┊125┊      callback();
++┊   ┊126┊    });
 +┊   ┊127┊
-+┊   ┊128┊  // Loads screen assets and invokes callback once loading is finished
-+┊   ┊129┊  loadScreen(callback = _.noop) {
-+┊   ┊130┊    if (!this.screen.load) return callback();
-+┊   ┊131┊
-+┊   ┊132┊    this.screen.loading = true;
-+┊   ┊133┊    // The number of assets to load
-+┊   ┊134┊    let loadsize = 0;
-+┊   ┊135┊
-+┊   ┊136┊    // We use the "after" method because we want the following callback to be invoked
-+┊   ┊137┊    // only once all assets are loaded
-+┊   ┊138┊    let onload = _.after(loadsize, () => {
-+┊   ┊139┊      delete this.screen.loading;
-+┊   ┊140┊      callback();
-+┊   ┊141┊    });
-+┊   ┊142┊
-+┊   ┊143┊    // This object can load assets
-+┊   ┊144┊    let assetsLoader = new Engine.AssetsLoader(() => {
-+┊   ┊145┊      loadsize++;
-+┊   ┊146┊      return () => onload();
-+┊   ┊147┊    });
-+┊   ┊148┊
-+┊   ┊149┊    // The "load" method returns the assets loaded by the screen
-+┊   ┊150┊    let screenAssets = this.screen.load(assetsLoader);
-+┊   ┊151┊    // The returned assets will be available on screen's assets object
-+┊   ┊152┊    _.extend(this.screen.assets, screenAssets);
-+┊   ┊153┊  }
-+┊   ┊154┊
-+┊   ┊155┊  // Disposes screen assets
-+┊   ┊156┊  unloadScreen() {
-+┊   ┊157┊    let assetsNames = this.screen.unload && this.screen.unload();
-+┊   ┊158┊    _.omit(this.assets, assetsNames);
-+┊   ┊159┊  }
-+┊   ┊160┊
- ┊109┊161┊  // Defines global assets
- ┊110┊162┊  extendAssets(assets) {
- ┊111┊163┊    _.extend(this.assets, assets);
++┊   ┊128┊    // This object can load assets
++┊   ┊129┊    let assetsLoader = new Engine.AssetsLoader(() => {
++┊   ┊130┊      loadsize++;
++┊   ┊131┊      return () => onload();
++┊   ┊132┊    });
++┊   ┊133┊
++┊   ┊134┊    // The "load" method returns the assets loaded by the screen
++┊   ┊135┊    let screenAssets = this.screen.load(assetsLoader);
++┊   ┊136┊    // The returned assets will be available on screen's assets object
++┊   ┊137┊    _.extend(this.screen.assets, screenAssets);
++┊   ┊138┊  }
++┊   ┊139┊
++┊   ┊140┊  // Disposes screen assets
++┊   ┊141┊  unloadScreen() {
++┊   ┊142┊    let assetsNames = this.screen.unload && this.screen.unload();
++┊   ┊143┊    _.omit(this.assets, assetsNames);
++┊   ┊144┊  }
++┊   ┊145┊
+ ┊ 94┊146┊  // Defines global assets
+ ┊ 95┊147┊  extendAssets(assets) {
+ ┊ 96┊148┊    _.extend(this.assets, assets);
 ```
 [}]: #
 

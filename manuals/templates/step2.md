@@ -41,7 +41,7 @@ A game loop can wear many forms, but the concept is gonna be the same, plus-minu
 
 {{{diff_step 2.5}}}
 
-The only thing it's doing right now is only drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw some custom stuff. I just want to point out that in the `draw` method I used a very handy technique called [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering), where I first draw everything on a virtual canvas which is not visible to us, and once it's finished, I the result on the main canvas. It behaves the same way React's [virtual DOM](https://www.npmjs.com/package/react-dom) behaves like, and it will prevent our game from stuttering. To start running the game, we first need to wait for the DOM content to initialize, and once its ready we gonna create a new game instance and call the `play` method:
+The only thing it's doing right now is only drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw stuff of our own. I want to point out that there is no need to implement a [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering) (A method similar to React's [virtual DOM](https://www.npmjs.com/package/react-dom)) when it comes to `HTMLCanvas` elements, since `HTML5` already does that for us. To start running the game, we first need to wait for the DOM content to initialize, and once it's ready we gonna create a new game instance and call the `play` method:
 
 {{{diff_step 2.6}}}
 

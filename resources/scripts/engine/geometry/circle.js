@@ -5,41 +5,46 @@ Engine.Geometry.Circle = class Circle {
   // rad1 - The first radian of the circle, not necessarily its beginning
   // rad2 - The second radian of the circle, not necessarily its beginning
   constructor(x, y, r, rad1, rad2) {
-    this.x = x.trim(9);
-    this.y = y.trim(9);
-    this.r = r.trim(9);
+    this.x = Utils.trim(x, 9);
+    this.y = Utils.trim(y, 9);
+    this.r = Utils.trim(r, 9);
 
     // Trimming mode is done based on which radian represents the ending and which radian
     // represents the ending
     if (rad1 > rad2) {
-      this.rad1 = rad1.trim(9, "floor");
-      this.rad2 = rad2.trim(9, "ceil");
+      this.rad1 = Utils.trim(rad1, 9, "floor");
+      this.rad2 = Utils.trim(rad2, 9, "ceil");
     }
     else {
-      this.rad1 = rad1.trim(9, "ceil");
-      this.rad2 = rad2.trim(9, "floor");
+      this.rad1 = Utils.trim(rad1, 9, "ceil");
+      this.rad2 = Utils.trim(rad2, 9, "floor");
     }
+  }
+
+  // Draws the circle on the given context
+  draw(context) {
+    context.arc(this.x, this.y, this.r, this.rad1, this.rad2);
   }
 
   // Gets the matching x value for the given radian
   getX(rad) {
-    if (!rad.trim(9).isBetween(this.rad1, this.rad2)) return;
-    return ((this.r * Math.cos(rad)) + this.x).trim(9);
+    if (!Utils(rad).trim(9).isBetween(this.rad1, this.rad2).value()) return;
+    return Utils.trim((this.r * Math.cos(rad)) + this.x, 9);
   }
 
   // Gets the matching y value for the given radian
   getY(rad) {
-    if (!rad.trim(9).isBetween(this.rad1, this.rad2)) return;
-    return ((this.r * Math.sin(rad)) + this.y).trim(9);
+    if (!Utils(rad).trim(9).isBetween(this.rad1, this.rad2).value()) return;
+    return Utils.trim((this.r * Math.sin(rad)) + this.y, 9);
   }
 
   // Gets the matching point for the given radian
   getPoint(rad) {
-    if (!rad.isBetween(this.rad1, this.rad2)) return;
+    if (!Utils.isBetween(rad, this.rad1, this.rad2)) return;
 
     return {
-      x: ((this.r * Math.cos(rad)) + this.x).trim(9),
-      y: ((this.r * Math.sin(rad)) + this.y).trim(9)
+      x: Utils.trim((this.r * Math.cos(rad)) + this.x, 9),
+      y: Utils.trim((this.r * Math.sin(rad)) + this.y, 9)
     };
   }
 
@@ -48,21 +53,22 @@ Engine.Geometry.Circle = class Circle {
     let rad = Math.atan2(y - this.y, x - this.x);
 
     // If calculated radian is in circle's radian range, return it
-    if (rad != null && rad.isBetween(this.rad1, this.rad2)) {
+    if (rad != null && Utils.isBetween(rad, this.rad1, this.rad2)) {
       return rad;
     }
 
-    // The calculated radian can still be in the circle's radian range in case
-    // they completed several whole circles
+    // The calculated radian can still be in the circle's radian range in case one
+    // of the radians is greater than 2 PIEs
     if (Math.abs(this.rad1) > Math.abs(this.rad2)) {
-      var cycRad = this.rad1;
+      var greatestRad = this.rad1;
     }
     else {
-      var cycRad = this.rad2;
+      var greatestRad = this.rad2;
     }
 
-    if ((rad + (2 * Math.PI * Math.floor(cycRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2) ||
-       (rad + (2 * Math.PI * Math.ceil(cycRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2)) {
+    // Check if the absolute radian is in the circle's radian range
+    if (Utils(rad + (2 * Math.PI * Math.floor(greatestRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2).value() ||
+        Utils(rad + (2 * Math.PI * Math.ceil(greatestRad / (2 * Math.PI)))).trim(9).isBetween(this.rad1, this.rad2).value()) {
       return rad;
     }
   }
@@ -110,8 +116,8 @@ Engine.Geometry.Circle = class Circle {
       }
     ]
     .map(point => ({
-        x: point.x.trim(9),
-        y: point.y.trim(9)
+        x: Utils.trim(point.x, 9),
+        y: Utils.trim(point.y, 9)
      }));
 
     interPoints = _.uniq(interPoints, point => `(${point.x}, ${point.y})`);
@@ -148,8 +154,8 @@ Engine.Geometry.Circle = class Circle {
       }
     ]
     .map(point => ({
-        x: point.x.trim(9),
-        y: point.y.trim(9)
+        x: Utils.trim(point.x, 9),
+        y: Utils.trim(point.y, 9)
     }))
     .filter(point => {
       return this.hasPoint(point.x, point.y) &&
