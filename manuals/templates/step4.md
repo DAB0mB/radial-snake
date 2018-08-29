@@ -38,13 +38,17 @@ This script will take everything that's in the `fonts` dir and parser it as ment
     $ npm install --save underscore
     $ npm install --save xmldom
 
-And instead of running the parser manually over and over again whenever we wanna use it, we will add an NPM script called `parse:fonts`:
+And instead of running the parser manually over and over again whenever we wanna use it, we will use the following `NPM` script instead:
 
 {{{diff_step 4.8}}}
 
+We don't want the generated fonts to be included by `git` since they are going to automatically regenerate themselves, therefore we gonna add the following ignore rule:
+
+{{{diff_step 4.9}}}
+
 Now we will build our `minecraftia` font by simply running:
 
-    $ npm run parse:fonts
+    $ npm run build:fonts
 
 And voila! We have a freshly created `json` file which we can work with. You can also get it from here:
 
@@ -52,24 +56,24 @@ And voila! We have a freshly created `json` file which we can work with. You can
 
 Now that we have our assets finally ready we can go ahead and focus on extending the engine which powers up our game. We need some sort of a generic font-engine which will know how to load a font file and create a text-sprite out of it. First we will implement a class called `Restorable`, which shares the same restore API as the CanvasRenderingContext2D and will give us the ability to save and restore the font's state (More information can be found [here](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/restore)):
 
-{{{diff_step 4.10}}}
+{{{diff_step 4.11}}}
 
 And now we can go ahead and implement the font class itself:
 
-{{{diff_step 4.11}}}
+{{{diff_step 4.12}}}
 
 The font API shares a similar API as [HTMLImageElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image), once we set the `src` property the font will start loading itself, and the `onload` user-defined callback should be called once finished. Another neat feature would be the `createTexture` method, which takes a string as its first argument, representing the text that we would like to generate, and returns an instance of the `Sprite` class.
 
 We will also be adding the option to load some font assets in our asset-loader:
 
-{{{diff_step 4.12}}}
+{{{diff_step 4.13}}}
 
 And replace the instructions texture loading with a `minecraftia` font loading in the initial splash screen:
 
-{{{diff_step 4.13}}}
+{{{diff_step 4.14}}}
 
 Now it can use us in the main menu screen where we will create a text-sprite saying `Press a key to start`, just like the instruction sprite we're about to replace:
 
-{{{diff_step 4.14}}}
+{{{diff_step 4.15}}}
 
 It shouldn't look any different from the beginning of the step where we manually drew the instruction texture, but in the next steps we will be using the font-engine a lot, and you will be thankful for what we've just did.

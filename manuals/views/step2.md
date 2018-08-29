@@ -246,7 +246,7 @@ A game loop can wear many forms, but the concept is gonna be the same, plus-minu
 ```
 [}]: #
 
-The only thing it's doing right now is only drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw stuff of our own. I want to point out that there is no need to implement a [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering) (A method similar to React's [virtual DOM](https://www.npmjs.com/package/react-dom)) when it comes to `HTMLCanvas` elements, since `HTML5` already does that for us. To start running the game, we first need to wait for the DOM content to initialize, and once it's ready we gonna create a new game instance and call the `play` method:
+The only thing it's doing right now is drawing a black background, but we're soon going to learn how to take advantage of this game-loop to draw stuff of our own. I'd like to point out that there is no need to implement a [double-buffer](https://en.wikipedia.org/wiki/Multiple_buffering) (A method similar to React's [virtual DOM](https://www.npmjs.com/package/react-dom)) when it comes to `HTMLCanvas` elements, since `HTML5` already does that for us. To start running the game, we first need to wait for the DOM content to initialize, and once it's ready we gonna create a new game instance and call the `play` method:
 
 [{]: <helper> (diff_step 2.6)
 #### Step 2.6: Create game entry point
@@ -571,43 +571,36 @@ Now that we have the `screen` class available for us, let's apply it to the main
  ┊35┊36┊    this.bufferedCanvas = document.createElement("canvas");
 ```
 ```diff
-@@ -39,13 +40,19 @@
- ┊39┊40┊  }
- ┊40┊41┊
- ┊41┊42┊  draw() {
--┊42┊  ┊    // Draw a black screen by default
- ┊43┊43┊    this.context.restore();
- ┊44┊44┊    this.context.fillStyle = "black";
- ┊45┊45┊    this.context.save();
- ┊46┊46┊    this.context.beginPath();
- ┊47┊47┊    this.context.rect(0, 0, this.canvas.width, this.canvas.height);
- ┊48┊48┊    this.context.fill();
-+┊  ┊49┊    this.drawScreen(this.context);
-+┊  ┊50┊  }
-+┊  ┊51┊
-+┊  ┊52┊  drawScreen(context) {
-+┊  ┊53┊    // If screen's assets are not yet loaded, don't draw it
-+┊  ┊54┊    if (this.screen.loading) return;
-+┊  ┊55┊    if (this.screen.draw) this.screen.draw(context);
- ┊49┊56┊  }
- ┊50┊57┊
- ┊51┊58┊  update() {
+@@ -46,6 +47,13 @@
+ ┊46┊47┊    this.context.beginPath();
+ ┊47┊48┊    this.context.rect(0, 0, this.canvas.width, this.canvas.height);
+ ┊48┊49┊    this.context.fill();
++┊  ┊50┊    this.drawScreen(this.context);
++┊  ┊51┊  }
++┊  ┊52┊
++┊  ┊53┊  drawScreen(context) {
++┊  ┊54┊    // If screen's assets are not yet loaded, don't draw it
++┊  ┊55┊    if (this.screen.loading) return;
++┊  ┊56┊    if (this.screen.draw) this.screen.draw(context);
+ ┊49┊57┊  }
+ ┊50┊58┊
+ ┊51┊59┊  update() {
 ```
 ```diff
-@@ -56,6 +63,13 @@
- ┊56┊63┊    this.updateScreen(span / this.speed);
- ┊57┊64┊  }
- ┊58┊65┊
-+┊  ┊66┊  updateScreen(span) {
-+┊  ┊67┊    this.screen.age += span;
-+┊  ┊68┊    // If screen's assets are not yet loaded, don't update it
-+┊  ┊69┊    if (this.screen.loading) return;
-+┊  ┊70┊    if (this.screen.update) this.screen.update(span);
-+┊  ┊71┊  }
-+┊  ┊72┊
- ┊59┊73┊  // The main loop of the game
- ┊60┊74┊  loop() {
- ┊61┊75┊    // If paused, don't run loop. The canvas will remain as is
+@@ -56,6 +64,13 @@
+ ┊56┊64┊    this.updateScreen(span / this.speed);
+ ┊57┊65┊  }
+ ┊58┊66┊
++┊  ┊67┊  updateScreen(span) {
++┊  ┊68┊    this.screen.age += span;
++┊  ┊69┊    // If screen's assets are not yet loaded, don't update it
++┊  ┊70┊    if (this.screen.loading) return;
++┊  ┊71┊    if (this.screen.update) this.screen.update(span);
++┊  ┊72┊  }
++┊  ┊73┊
+ ┊59┊74┊  // The main loop of the game
+ ┊60┊75┊  loop() {
+ ┊61┊76┊    // If paused, don't run loop. The canvas will remain as is
 ```
 [}]: #
 
@@ -655,65 +648,68 @@ Now that we have the `assets loader` we can add the ability to change a screen. 
 
 ##### Changed resources/scripts/engine/game.js
 ```diff
-@@ -91,6 +91,58 @@
- ┊ 91┊ 91┊    this.playing = false;
- ┊ 92┊ 92┊  }
- ┊ 93┊ 93┊
-+┊   ┊ 94┊  changeScreen(Screen, ...screenArgs) {
-+┊   ┊ 95┊    // If there is a screen defined, dispose it first
-+┊   ┊ 96┊    if (this.screen) {
-+┊   ┊ 97┊      this.unloadScreen();
-+┊   ┊ 98┊      this.screen.disposeEventListeners();
-+┊   ┊ 99┊    }
-+┊   ┊100┊
-+┊   ┊101┊    this.screen = new Screen(this, ...screenArgs);
-+┊   ┊102┊
-+┊   ┊103┊    // Load screen assets
-+┊   ┊104┊    this.loadScreen(() => {
-+┊   ┊105┊      // Once assets are loaded, initialize event listeners
-+┊   ┊106┊      this.screen.initEventListeners();
-+┊   ┊107┊      // The "initialize" method is exactly the same as the constructor, only it runs
-+┊   ┊108┊      // once assets are available and event listeners are registered
-+┊   ┊109┊      this.screen.initialize(this, ...screenArgs);
-+┊   ┊110┊    });
-+┊   ┊111┊  }
-+┊   ┊112┊
-+┊   ┊113┊  // Loads screen assets and invokes callback once loading is finished
-+┊   ┊114┊  loadScreen(callback = _.noop) {
-+┊   ┊115┊    if (!this.screen.load) return callback();
-+┊   ┊116┊
-+┊   ┊117┊    this.screen.loading = true;
-+┊   ┊118┊    // The number of assets to load
-+┊   ┊119┊    let loadsize = 0;
-+┊   ┊120┊
-+┊   ┊121┊    // We use the "after" method because we want the following callback to be invoked
-+┊   ┊122┊    // only once all assets are loaded
-+┊   ┊123┊    let onload = _.after(loadsize, () => {
-+┊   ┊124┊      delete this.screen.loading;
-+┊   ┊125┊      callback();
-+┊   ┊126┊    });
-+┊   ┊127┊
-+┊   ┊128┊    // This object can load assets
-+┊   ┊129┊    let assetsLoader = new Engine.AssetsLoader(() => {
-+┊   ┊130┊      loadsize++;
-+┊   ┊131┊      return () => onload();
-+┊   ┊132┊    });
-+┊   ┊133┊
-+┊   ┊134┊    // The "load" method returns the assets loaded by the screen
-+┊   ┊135┊    let screenAssets = this.screen.load(assetsLoader);
-+┊   ┊136┊    // The returned assets will be available on screen's assets object
-+┊   ┊137┊    _.extend(this.screen.assets, screenAssets);
-+┊   ┊138┊  }
-+┊   ┊139┊
-+┊   ┊140┊  // Disposes screen assets
-+┊   ┊141┊  unloadScreen() {
-+┊   ┊142┊    let assetsNames = this.screen.unload && this.screen.unload();
-+┊   ┊143┊    _.omit(this.assets, assetsNames);
-+┊   ┊144┊  }
-+┊   ┊145┊
- ┊ 94┊146┊  // Defines global assets
- ┊ 95┊147┊  extendAssets(assets) {
- ┊ 96┊148┊    _.extend(this.assets, assets);
+@@ -92,6 +92,61 @@
+ ┊ 92┊ 92┊    this.playing = false;
+ ┊ 93┊ 93┊  }
+ ┊ 94┊ 94┊
++┊   ┊ 95┊  changeScreen(Screen, ...screenArgs) {
++┊   ┊ 96┊    // If there is a screen defined, dispose it first
++┊   ┊ 97┊    if (this.screen) {
++┊   ┊ 98┊      this.unloadScreen();
++┊   ┊ 99┊      this.screen.disposeEventListeners();
++┊   ┊100┊    }
++┊   ┊101┊
++┊   ┊102┊    this.screen = new Screen(this, ...screenArgs);
++┊   ┊103┊
++┊   ┊104┊    // Load screen assets
++┊   ┊105┊    this.loadScreen(() => {
++┊   ┊106┊      // Once assets are loaded, initialize event listeners
++┊   ┊107┊      this.screen.initEventListeners();
++┊   ┊108┊      // The "initialize" method is exactly the same as the constructor, only it runs
++┊   ┊109┊      // once assets are available and event listeners are registered
++┊   ┊110┊      this.screen.initialize(this, ...screenArgs);
++┊   ┊111┊    });
++┊   ┊112┊  }
++┊   ┊113┊
++┊   ┊114┊  // Loads screen assets and invokes callback once loading is finished
++┊   ┊115┊  loadScreen(callback = _.noop) {
++┊   ┊116┊    if (!this.screen.load) return callback();
++┊   ┊117┊
++┊   ┊118┊    this.screen.loading = true;
++┊   ┊119┊    // The number of assets to load
++┊   ┊120┊    let loadsize = 0;
++┊   ┊121┊    let onload;
++┊   ┊122┊
++┊   ┊123┊    // This object can load assets
++┊   ┊124┊    let assetsLoader = new Engine.AssetsLoader(() => {
++┊   ┊125┊      loadsize++;
++┊   ┊126┊      return () => onload();
++┊   ┊127┊    });
++┊   ┊128┊
++┊   ┊129┊    // The "load" method returns the assets loaded by the screen
++┊   ┊130┊    let screenAssets = this.screen.load(assetsLoader);
++┊   ┊131┊
++┊   ┊132┊    // We use the "after" method because we want the following callback to be invoked
++┊   ┊133┊    // only once all assets are loaded
++┊   ┊134┊    onload = _.after(loadsize, () => {
++┊   ┊135┊      delete this.screen.loading;
++┊   ┊136┊      callback();
++┊   ┊137┊    });
++┊   ┊138┊
++┊   ┊139┊    // The returned assets will be available on screen's assets object
++┊   ┊140┊    _.extend(this.screen.assets, screenAssets);
++┊   ┊141┊  }
++┊   ┊142┊
++┊   ┊143┊  // Disposes screen assets
++┊   ┊144┊  unloadScreen() {
++┊   ┊145┊    if (!this.screen.unload) return;
++┊   ┊146┊    let assetsNames = this.screen.unload();
++┊   ┊147┊    _.omit(this.assets, assetsNames);
++┊   ┊148┊  }
++┊   ┊149┊
+ ┊ 95┊150┊  // Defines global assets
+ ┊ 96┊151┊  extendAssets(assets) {
+ ┊ 97┊152┊    _.extend(this.assets, assets);
 ```
 [}]: #
 

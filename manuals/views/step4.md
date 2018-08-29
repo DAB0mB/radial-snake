@@ -260,7 +260,7 @@ This script will take everything that's in the `fonts` dir and parser it as ment
     $ npm install --save underscore
     $ npm install --save xmldom
 
-And instead of running the parser manually over and over again whenever we wanna use it, we will add an NPM script called `parse:fonts`:
+And instead of running the parser manually over and over again whenever we wanna use it, we will use the following `NPM` script instead:
 
 [{]: <helper> (diff_step 4.8)
 #### Step 4.8: Add font parsing npm scripts
@@ -273,16 +273,31 @@ And instead of running the parser manually over and over again whenever we wanna
  ┊ 5┊ 5┊  "scripts": {
 -┊ 6┊  ┊    "serve": "nodemon server.js"
 +┊  ┊ 6┊    "serve": "npm run parse:fonts && nodemon server.js",
-+┊  ┊ 7┊    "parse:fonts": "node helpers/font_parser.js"
++┊  ┊ 7┊    "build:fonts": "node helpers/font_parser.js"
  ┊ 7┊ 8┊  },
  ┊ 8┊ 9┊  "dependencies": {
  ┊ 9┊10┊    "async": "^2.1.4",
 ```
 [}]: #
 
+We don't want the generated fonts to be included by `git` since they are going to automatically regenerate themselves, therefore we gonna add the following ignore rule:
+
+[{]: <helper> (diff_step 4.9)
+#### Step 4.9: Add rule to to git-ignore parsed fonts
+
+##### Changed .gitignore
+```diff
+@@ -1,2 +1,3 @@
+ ┊1┊1┊node_modules
+-┊2┊ ┊npm-debug.log🚫↵
++┊ ┊2┊npm-debug.log
++┊ ┊3┊resources/assets/fonts/*.json🚫↵
+```
+[}]: #
+
 Now we will build our `minecraftia` font by simply running:
 
-    $ npm run parse:fonts
+    $ npm run build:fonts
 
 And voila! We have a freshly created `json` file which we can work with. You can also get it from here:
 
@@ -290,8 +305,8 @@ And voila! We have a freshly created `json` file which we can work with. You can
 
 Now that we have our assets finally ready we can go ahead and focus on extending the engine which powers up our game. We need some sort of a generic font-engine which will know how to load a font file and create a text-sprite out of it. First we will implement a class called `Restorable`, which shares the same restore API as the CanvasRenderingContext2D and will give us the ability to save and restore the font's state (More information can be found [here](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/restore)):
 
-[{]: <helper> (diff_step 4.10)
-#### Step 4.10: Add 'Restorable' class
+[{]: <helper> (diff_step 4.11)
+#### Step 4.11: Add 'Restorable' class
 
 ##### Added resources/scripts/engine/restorable.js
 ```diff
@@ -334,8 +349,8 @@ Now that we have our assets finally ready we can go ahead and focus on extending
 
 And now we can go ahead and implement the font class itself:
 
-[{]: <helper> (diff_step 4.11)
-#### Step 4.11: Create font engine
+[{]: <helper> (diff_step 4.12)
+#### Step 4.12: Create font engine
 
 ##### Added resources/scripts/engine/font.js
 ```diff
@@ -492,8 +507,8 @@ The font API shares a similar API as [HTMLImageElement](https://developer.mozill
 
 We will also be adding the option to load some font assets in our asset-loader:
 
-[{]: <helper> (diff_step 4.12)
-#### Step 4.12: Add a font loading option to 'AssetLoader'
+[{]: <helper> (diff_step 4.13)
+#### Step 4.13: Add a font loading option to 'AssetLoader'
 
 ##### Changed resources/scripts/engine/assets_loader.js
 ```diff
@@ -515,8 +530,8 @@ We will also be adding the option to load some font assets in our asset-loader:
 
 And replace the instructions texture loading with a `minecraftia` font loading in the initial splash screen:
 
-[{]: <helper> (diff_step 4.13)
-#### Step 4.13: Load 'minecraftia' font in splash screen
+[{]: <helper> (diff_step 4.14)
+#### Step 4.14: Load 'minecraftia' font in splash screen
 
 ##### Changed resources/scripts/game/screens/splash/index.js
 ```diff
@@ -544,8 +559,8 @@ And replace the instructions texture loading with a `minecraftia` font loading i
 
 Now it can use us in the main menu screen where we will create a text-sprite saying `Press a key to start`, just like the instruction sprite we're about to replace:
 
-[{]: <helper> (diff_step 4.14)
-#### Step 4.14: Replace texture usage with font usage in main menu screen
+[{]: <helper> (diff_step 4.15)
+#### Step 4.15: Replace texture usage with font usage in main menu screen
 
 ##### Changed resources/scripts/game/screens/menu/index.js
 ```diff

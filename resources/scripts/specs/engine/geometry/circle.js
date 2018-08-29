@@ -3,6 +3,10 @@ describe("Engine.Geometry.Circle class", function() {
     this.circle = new Engine.Geometry.Circle(1, 1, 5, 0, 1.5 * Math.PI);
   });
 
+  afterEach(function () {
+    this.circle.delete();
+  });
+
   describe("getX method", function() {
     describe("given inranged rad", function() {
       it("returns x", function() {
@@ -64,6 +68,8 @@ describe("Engine.Geometry.Circle class", function() {
           { x: -2, y: -3 },
           { x: -2, y: 5 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -74,6 +80,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getCircleIntersection(circle)).toEqual([
           { x: -2, y: 5 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -84,6 +92,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getCircleIntersection(circle)).toEqual([
           { x: -4, y: 1 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -91,6 +101,7 @@ describe("Engine.Geometry.Circle class", function() {
       it("returns nothing", function() {
         let circle = new Engine.Geometry.Circle(10, 10, 2, 0, 2 * Math.PI);
         expect(this.circle.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
 
@@ -98,6 +109,7 @@ describe("Engine.Geometry.Circle class", function() {
       it("nothing", function() {
         let circle = new Engine.Geometry.Circle(1, 1, 2, 0, 2 * Math.PI);
         expect(this.circle.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
   });
@@ -111,6 +123,8 @@ describe("Engine.Geometry.Circle class", function() {
           { x: 6, y: 1 },
           { x: -4, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -121,6 +135,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getLineIntersection(line)).toEqual([
           { x: -4, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -131,6 +147,8 @@ describe("Engine.Geometry.Circle class", function() {
         expect(this.circle.getLineIntersection(line)).toEqual([
           { x: 1, y: 6 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -138,6 +156,7 @@ describe("Engine.Geometry.Circle class", function() {
       it("returns nothing", function() {
         let line = new Engine.Geometry.Line(-10, 10, 10, 10);
         expect(this.circle.getLineIntersection(line)).toBeUndefined();
+        line.delete();
       });
     });
   });

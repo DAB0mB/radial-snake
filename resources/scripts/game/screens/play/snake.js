@@ -43,6 +43,10 @@ Game.Screens.Play.Snake = class Snake extends Engine.Layer {
     screen.appendLayer(Game.Screens.Play.Score, this.snakes);
   }
 
+  unload() {
+    this.snakes.forEach(snake => snake.delete());
+  }
+
   draw(context) {
     // Draw each snake in the snakes array
     this.snakes.forEach(snake => snake.draw(context));
@@ -63,7 +67,7 @@ Game.Screens.Play.Snake = class Snake extends Engine.Layer {
         // Don't scan for intersection with self, obviously this will always be true
         if (opponent === snake) return;
         // Disqualify if intersected with opponent
-        if (snake.getSnakeIntersection(opponent)) return this.snakes.splice(index, 1);
+        if (snake.getSnakeIntersection(opponent)) this.snakes.splice(index, 1);
       });
     });
 

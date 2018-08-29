@@ -40,6 +40,7 @@ Engine.Game = class Game {
   }
 
   draw() {
+    // Draw a black screen by default
     this.context.restore();
     this.context.fillStyle = "black";
     this.context.save();
@@ -94,6 +95,7 @@ Engine.Game = class Game {
   changeScreen(Screen, ...screenArgs) {
     // If there is a screen defined, dispose it first
     if (this.screen) {
+      this.screen.delete();
       this.unloadScreen();
       this.screen.disposeEventListeners();
     }
@@ -117,13 +119,7 @@ Engine.Game = class Game {
     this.screen.loading = true;
     // The number of assets to load
     let loadsize = 0;
-
-    // We use the "after" method because we want the following callback to be invoked
-    // only once all assets are loaded
-    let onload = _.after(loadsize, () => {
-      delete this.screen.loading;
-      callback();
-    });
+    let onload;
 
     // This object can load assets
     let assetsLoader = new Engine.AssetsLoader(() => {
@@ -133,13 +129,22 @@ Engine.Game = class Game {
 
     // The "load" method returns the assets loaded by the screen
     let screenAssets = this.screen.load(assetsLoader);
+
+    // We use the "after" method because we want the following callback to be invoked
+    // only once all assets are loaded
+    onload = _.after(loadsize, () => {
+      delete this.screen.loading;
+      callback();
+    });
+
     // The returned assets will be available on screen's assets object
     _.extend(this.screen.assets, screenAssets);
   }
 
   // Disposes screen assets
   unloadScreen() {
-    let assetsNames = this.screen.unload && this.screen.unload();
+    if (!this.screen.unload) return;
+    let assetsNames = this.screen.unload();
     _.omit(this.assets, assetsNames);
   }
 

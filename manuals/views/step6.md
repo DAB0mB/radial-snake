@@ -269,7 +269,7 @@ Now if you'll launch the game and start a new match, you should see a white `Rea
 +┊  ┊60┊        // Don't scan for intersection with self, obviously this will always be true
 +┊  ┊61┊        if (opponent === snake) return;
 +┊  ┊62┊        // Disqualify if intersected with opponent
-+┊  ┊63┊        if (snake.getSnakeIntersection(opponent)) return this.snakes.splice(index, 1);
++┊  ┊63┊        if (snake.getSnakeIntersection(opponent)) this.snakes.splice(index, 1);
 +┊  ┊64┊      });
 +┊  ┊65┊    });
 +┊  ┊66┊

@@ -8,6 +8,10 @@ describe("Engine.Geometry.Polygon class", function() {
     );
   });
 
+  afterEach(function () {
+    this.polygon.delete();
+  });
+
   describe("hasPoint method", function() {
     describe("given contained point", function() {
       it("returns true", function() {
@@ -33,8 +37,10 @@ describe("Engine.Geometry.Polygon class", function() {
 
         expect(this.polygon.getLineIntersection(line)).toEqual([
           { x: 5, y: 4 },
-          { x: -0, y: 1 }
+          { x: 0, y: 1 }
         ]);
+
+        line.delete();
       });
     });
 
@@ -43,6 +49,8 @@ describe("Engine.Geometry.Polygon class", function() {
         let line = new Engine.Geometry.Line(10, 11, 15, 14);
 
         expect(this.polygon.getLineIntersection(line)).toBeUndefined();
+
+        line.delete();
       });
     });
   });
@@ -56,6 +64,8 @@ describe("Engine.Geometry.Polygon class", function() {
           { x: 2, y: 0 },
           { x: 0, y: 2 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -66,6 +76,8 @@ describe("Engine.Geometry.Polygon class", function() {
         expect(this.polygon.getCircleIntersection(circle)).toEqual([
           { x: 2, y: 0 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -76,6 +88,8 @@ describe("Engine.Geometry.Polygon class", function() {
         expect(this.polygon.getCircleIntersection(circle)).toEqual([
           { x: 0, y: 3 }
         ]);
+
+        circle.delete();
       });
     });
 
@@ -83,6 +97,7 @@ describe("Engine.Geometry.Polygon class", function() {
       it("returns nothing", function() {
         let circle = new Engine.Geometry.Circle(10, 10, 2, 0, 2 * Math.PI);
         expect(this.polygon.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
 
@@ -90,6 +105,7 @@ describe("Engine.Geometry.Polygon class", function() {
       it("nothing", function() {
         let circle = new Engine.Geometry.Circle(2.5, 2.5, 2, 0, 2 * Math.PI);
         expect(this.polygon.getCircleIntersection(circle)).toBeUndefined();
+        circle.delete();
       });
     });
   });

@@ -13,7 +13,7 @@ Keep in mind that a computer's precision is limited due its [binary representati
 
 ##### Added resources/scripts/utils.js
 ```diff
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,68 @@
 +┊  ┊ 1┊// A wrapper function for our utilities which will enable chaining
 +┊  ┊ 2┊// e.g. Utils().mod().trim().isBetween()...
 +┊  ┊ 3┊Utils = function Utils(context) {
@@ -55,43 +55,33 @@ Keep in mind that a computer's precision is limited due its [binary representati
 +┊  ┊39┊
 +┊  ┊40┊// Initiates comparison operator between context number and a given number, only here
 +┊  ┊41┊// a precision can be specified
-+┊  ┊42┊Utils.compare = function (context, num, method, precision) {
-+┊  ┊43┊  switch (arguments.length) {
-+┊  ┊44┊    case 2:
-+┊  ┊45┊      var precision = arguments[1];
-+┊  ┊46┊      break;
-+┊  ┊47┊    case 3:
-+┊  ┊48┊      var method = arguments[1];
-+┊  ┊49┊      precision = arguments[2];
-+┊  ┊50┊      break;
-+┊  ┊51┊  }
-+┊  ┊52┊
-+┊  ┊53┊  switch (precision) {
-+┊  ┊54┊    // Fixed precision, "almost equal" with a deviation of ε
-+┊  ┊55┊    case "f":
-+┊  ┊56┊      switch (method) {
-+┊  ┊57┊        case "<": case "<=": return context <= num + Number.EPSILON;
-+┊  ┊58┊        case ">": case ">=": return context >= num - Number.EPSILON;
-+┊  ┊59┊        default: return Math.abs(context - num) <= Number.EPSILON;
-+┊  ┊60┊      }
-+┊  ┊61┊    // Pixel precision, round comparison
-+┊  ┊62┊    case "px":
-+┊  ┊63┊      switch (method) {
-+┊  ┊64┊        case "<": case "<=": return Math.round(context) <= Math.round(num);
-+┊  ┊65┊        case ">": case ">=": return Math.round(context) >= Math.round(num);
-+┊  ┊66┊        default: return Math.round(context) == Math.round(num);
-+┊  ┊67┊      }
-+┊  ┊68┊    // Exact precision
-+┊  ┊69┊    default:
-+┊  ┊70┊      switch (method) {
-+┊  ┊71┊        case "<": return context < num;
-+┊  ┊72┊        case "<=": return context <= num;
-+┊  ┊73┊        case ">": return context > num;
-+┊  ┊74┊        case ">=": return context >= num;
-+┊  ┊75┊        default: return context === num;
-+┊  ┊76┊      }
-+┊  ┊77┊  }
-+┊  ┊78┊};🚫↵
++┊  ┊42┊Utils.compare = function (context, num, method, precision = method) {
++┊  ┊43┊  switch (precision) {
++┊  ┊44┊    // Fixed precision, "almost equal" with a deviation of ε
++┊  ┊45┊    case "f":
++┊  ┊46┊      switch (method) {
++┊  ┊47┊        case "<": case "<=": return context <= num + Number.EPSILON;
++┊  ┊48┊        case ">": case ">=": return context >= num - Number.EPSILON;
++┊  ┊49┊        default: return Math.abs(context - num) <= Number.EPSILON;
++┊  ┊50┊      }
++┊  ┊51┊    // Pixel precision, round comparison
++┊  ┊52┊    case "px":
++┊  ┊53┊      switch (method) {
++┊  ┊54┊        case "<": case "<=": return Math.round(context) <= Math.round(num);
++┊  ┊55┊        case ">": case ">=": return Math.round(context) >= Math.round(num);
++┊  ┊56┊        default: return Math.round(context) == Math.round(num);
++┊  ┊57┊      }
++┊  ┊58┊    // Exact precision
++┊  ┊59┊    default:
++┊  ┊60┊      switch (method) {
++┊  ┊61┊        case "<": return context < num;
++┊  ┊62┊        case "<=": return context <= num;
++┊  ┊63┊        case ">": return context > num;
++┊  ┊64┊        case ">=": return context >= num;
++┊  ┊65┊        default: return context === num;
++┊  ┊66┊      }
++┊  ┊67┊  }
++┊  ┊68┊};🚫↵
 ```
 
 ##### Changed views/game.html
@@ -968,7 +958,7 @@ Now we will create a some tests to make sure our newly created polygon works pro
 +┊  ┊33┊
 +┊  ┊34┊        expect(this.polygon.getLineIntersection(line)).toEqual([
 +┊  ┊35┊          { x: 5, y: 4 },
-+┊  ┊36┊          { x: -0, y: 1 }
++┊  ┊36┊          { x: 0, y: 1 }
 +┊  ┊37┊        ]);
 +┊  ┊38┊      });
 +┊  ┊39┊    });
